@@ -1,0 +1,40 @@
+3a4,5
+>     // Keep track of chosen position
+>     vec3 light_sample;
+6,8d7
+<     // Additionally, we keep track of the sample value
+<     // to avoid recomputing LTCs for chosen sample
+<     float sample_value;
+14c13
+<     reservoir.sample_value = 0;
+---
+>     reservoir.light_sample = vec3(0);
+17c16
+< void insert_in_reservoir(inout reservoir_t reservoir, float w, int light_index, float sample_value, float rand) {
+---
+> void insert_in_reservoir(inout reservoir_t reservoir, float w, int light_index, vec3 light_sample, float rand) {
+19a19
+>         reservoir.light_sample = light_sample;
+21d20
+<         reservoir.sample_value = sample_value;
+29a29
+>         vec3 light_pos;
+31,32c31,32
+<         sampleLight(light_idx, pdf, rng());   // Randomly sample a light only
+<         vec3 color = evaluate_ltc(shading_data, light_idx);    // Evaluate LTC of the light at shading point
+---
+>         sampleLightPos(light_idx, light_pos, pdf, rng());   // Randomly sample a light and a point on it
+>         vec3 color = evaluate_shading_no_vis(shading_data, light_idx, light_pos);    // Evaluate the integrand at sample without visibility
+35c35
+<         insert_in_reservoir(res, w, light_idx, p_hat, rng());
+---
+>         insert_in_reservoir(res, w, light_idx, light_sample, rng());
+40c40,41
+<         vec3 color = evaluate_projltc(shading_data, res.light_idx, visibility);      // Evaluate integrand using ProjLTC [Peters, 2021]
+---
+>         vec3 color = evaluate_shading_vis(shading_data, res.light_idx, res.light_pos, visibility);      // Evaluate the integrand at sample with visibility
+>         float p_hat = len(color);
+42c43
+<             float W = res.w_sum / (m * res.sample_value);   // Note that we have to divide with the LTC evaluation and not len(color)
+---
+>             float W = res.w_sum / (m * p_hat);

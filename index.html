@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="Combining Resampled Importance and Projected Solid Angle Samplings for Many Area Light Rendering">
+  <meta name="keywords" content="LTC, ReSTIR, Real-Time Rendering, Linearly Transformed Cosine">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Combining Resampled Importance and Projected Solid Angle Samplings for Many Area Light Rendering</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+    <!-- Make sure to load the highlight.js CSS file before the Diff2Html CSS file -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.1/styles/github.min.css" />
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
+  />
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+  <script src="./static/js/diff.js"></script>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Combining Resampled Importance and Projected Solid Angle Samplings for Many Area Light Rendering</h1>
+          <h2 class="is-size-4">ACM SIGGRAPH Asia 2023, Technical Communications</h2>
+          </br>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://ishaanshah.github.io">Ishaan Shah</a>,</span>
+            <span class="author-block">
+              <a href="https://aakashkt.github.io">Aakash KT</a>,</span>
+            <span class="author-block">
+              <a href="https://faculty.iiit.ac.in/~pjn/">P. J. Narayanan</a>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">CVIT, IIIT Hyderabad</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href="https://ishaanshah.github.io/assets/pdfs/risltc.pdf"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- Code Link. -->
+              <span class="link-block">
+                <a href="https://github.com/ishaanshah/risltc"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                </a>
+              </span>
+              <!-- Dataset Link. -->
+              <span class="link-block">
+                <a href="https://github.com/google/nerfies/releases/tag/0.1"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="far fa-images"></i>
+                  </span>
+                  <span>Scenes</span>
+                </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero">
+  <div class="container is-widescreen">
+      <img id="teaser" width="100%" src="./static/images/teaser.jpg" />
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-widescreen">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          Direct lighting from many area light sources is challenging due to variance from both choosing an important light and then a point on it.
+          Resampled Importance Sampling (RIS) achieves low variance in such situations, however it is limited to simple sampling strategies for it's candidates.
+          Specifically for area lights, we can improve the convergence of RIS by incorporating a better sampling strategy: Projected Solid Angle Sampling (ProjLTC).
+          Naively combining RIS and ProjLTC improves equal sample convergence, however achieves little to no gain in equal time.
+          We identify the core issue for the high run-times and reformulate RIS for a better integration with ProjLTC.
+          Our method achieves better convergence and results in both equal sample and equal time.
+          We evaluate our method on challenging scenes with varying number of area light sources and compare to uniform sampling, RIS and ProjLTC.
+          In all cases, our method seldom performs worse than RIS and often performs better.
+        </div>
+      </div>
+    </div>
+    <!--/ Abstract. -->
+  </div>
+
+
+  <div class="container is-widescreen">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Implementation</h2>
+        <div class="content has-text-justified">
+          Our algorithm is very simple to implement and requires slight modifications to the original RIS+WRS [Bitterli, 2020] provided implementations of LTC [Heitz, 2016] and ProjLTC [Peters, 2021] are given.
+          We provide the modifications required below. The complete source code can be found in the following <a href="https://github.com/ishaanshah/risltc">repository</a>.
+        </div>
+        <div id="myDiffElement"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- <section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@article{park2021nerfies,
+  author    = {Park, Keunhong and Sinha, Utkarsh and Barron, Jonathan T. and Bouaziz, Sofien and Goldman, Dan B and Seitz, Steven M. and Martin-Brualla, Ricardo},
+  title     = {Nerfies: Deformable Neural Radiance Fields},
+  journal   = {ICCV},
+  year      = {2021},
+}</code></pre>
+  </div>
+</section> -->
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            Website template has been borrowed and modified from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
