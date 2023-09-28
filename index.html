@@ -46,11 +46,28 @@
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
-  <script src="./static/js/index.js"></script>
   <script src="./static/js/diff.js"></script>
-</head>
-<body>
 
+  <!-- Stuff needed for interactive viewer -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,600" rel="stylesheet" type="text/css"/>
+  <!-- <link href="./static/js/utils/report.css" rel="stylesheet"/> -->
+  <script type="text/javascript" src="https://kit.fontawesome.com/b3ad2626f1.js"></script>
+  <script type="text/javascript" src="scenes/bistro-interior-(etd)/data.js"></script>
+  <script type="text/javascript" src="./static/js/utils/react.js"></script>
+  <script type="text/javascript" src="./static/js/utils/react-dom.js"></script>
+  <script type="text/javascript" src="./static/js/utils/ImageBox.js"></script>
+  <script type="text/javascript" src="./static/js/utils/Chart.js"></script>
+  <script type="text/javascript" src="./static/js/utils/ChartBox.js"></script>
+  <script type="text/javascript" src="./static/js/utils/TableBox.js"></script>
+  <script type="text/javascript" src="./static/js/utils/CopyrightBox.js"></script>
+  <script type="text/javascript" src="./static/js/utils/jeri.js"></script>
+  <script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script type="text/javascript" src="./static/js/utils/PlotBox.js"></script>
+  <script type="text/javascript" src="./static/js/interactive_viewer.js"></script>
+  <link rel="stylesheet" href="./static/css/interactive_viewer.css">
+</head>
+
+<body onload="setup();">
 <section class="hero">
   <div class="hero-body">
     <div class="container is-max-desktop">
@@ -61,9 +78,9 @@
           </br>
           <div class="is-size-5 publication-authors">
             <span class="author-block">
-              <a href="https://ishaanshah.github.io">Ishaan Shah</a>,</span>
+              <a href="https://ishaanshah.github.io">Ishaan Shah*</a>,</span>
             <span class="author-block">
-              <a href="https://aakashkt.github.io">Aakash KT</a>,</span>
+              <a href="https://aakashkt.github.io">Aakash KT*</a>,</span>
             <span class="author-block">
               <a href="https://faculty.iiit.ac.in/~pjn/">P. J. Narayanan</a>
             </span>
@@ -123,7 +140,7 @@
   <div class="container is-widescreen">
     <!-- Abstract. -->
     <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
+      <div class="column is-full">
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           Direct lighting from many area light sources is challenging due to variance from both choosing an important light and then a point on it.
@@ -139,22 +156,47 @@
     </div>
     <!--/ Abstract. -->
   </div>
+</section>
 
-
+<section class="section">
   <div class="container is-widescreen">
     <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
+      <div class="column is-full">
         <h2 class="title is-3">Implementation</h2>
         <div class="content has-text-justified">
           Our algorithm is very simple to implement and requires slight modifications to the original RIS+WRS [Bitterli, 2020] provided implementations of LTC [Heitz, 2016] and ProjLTC [Peters, 2021] are given.
           We provide the modifications required below. The complete source code can be found in the following <a href="https://github.com/ishaanshah/risltc">repository</a>.
         </div>
-        <div id="myDiffElement"></div>
+        <div id="code-diff"></div>
       </div>
     </div>
   </div>
 </section>
 
+<section class="section">
+  <div class="container is-widescreen">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full">
+        <h2 class="title is-3">Results</h2>
+          <div class="content scene-content" id="content">
+            <div class="image-box" id="image-box">
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-widescreen">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">References</h2>
+
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">

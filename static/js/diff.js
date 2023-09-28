@@ -38,10 +38,14 @@ index 665618b..4ffa51a 100644
          int light_idx;
 -        vec3 light_pos;
          float pdf;
--        sampleLightPos(light_idx, light_pos, pdf, rng());   // Randomly sample a light and a point on it
--        vec3 color = evaluate_shading_no_vis(shading_data, light_idx, light_pos);    // Evaluate the integrand at sample without visibility
-+        sampleLight(light_idx, pdf, rng());   // Randomly sample a light only
-+        vec3 color = evaluate_ltc(shading_data, light_idx);    // Evaluate LTC of the light at shading point
+-        // Randomly sample a light and a point on it 
+-        sampleLightPos(light_idx, light_pos, pdf, rng());
++        // Randomly sample a light only
++        sampleLight(light_idx, pdf, rng());
+-        // Evaluate the integrand at sample without visibility
+-        vec3 color = evaluate_shading_no_vis(shading_data, light_idx, light_pos);
++        // Evaluate LTC of the light at shading point
++        vec3 color = evaluate_ltc(shading_data, light_idx);
          float p_hat = length(color);
          float w = p_hat / pdf;
 -        insert_in_reservoir(res, w, light_idx, light_sample, rng());
@@ -50,18 +54,22 @@ index 665618b..4ffa51a 100644
 
      if (res.light_index >= 0) {
          bool visibility;
--        vec3 color = evaluate_shading_vis(shading_data, res.light_idx, res.light_pos, visibility);      // Evaluate the integrand at sample with visibility
+-        // Evaluate the integrand at sample with visibility
+-        vec3 color = evaluate_shading_vis(shading_data, res.light_idx, res.light_pos, visibility);
 -        float p_hat = len(color);
-+        vec3 color = evaluate_projltc(shading_data, res.light_idx, visibility);      // Evaluate integrand using ProjLTC [Peters, 2021]
++        // Evaluate integrand using ProjLTC [Peters, 2021]
++        vec3 color = evaluate_projltc(shading_data, res.light_idx, visibility);
          if (visibility) {
 -            float W = res.w_sum / (m * p_hat);
-+            float W = res.w_sum / (m * res.sample_value);   // Note that we have to divide with the LTC evaluation and not len(color)
++            // Note that we have to divide with
++            // the LTC evaluation and not len(color)
++            float W = res.w_sum / (m * res.sample_value);
          } else {
              W = 0.0;
          }`;
 
 document.addEventListener('DOMContentLoaded', function () {
-var targetElement = document.getElementById('myDiffElement');
+var targetElement = document.getElementById('code-diff');
 var configuration = {
     drawFileList: false,
     fileListToggle: false,

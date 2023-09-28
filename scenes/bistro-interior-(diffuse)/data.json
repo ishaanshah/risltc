@@ -1,0 +1,97 @@
+{
+    "imageBoxes": [
+        {
+            "title": "Images",
+            "elements": [
+                {
+                    "title": "Reference",
+                    "version": "-",
+                    "image": "Reference.png"
+                },
+                {
+                    "title": "Uniform",
+                    "version": "-",
+                    "image": "Uniform.png"
+                },
+                {
+                    "title": "ProjLTC",
+                    "version": "-",
+                    "image": "ProjLTC.png"
+                },
+                {
+                    "title": "RIS",
+                    "version": "-",
+                    "image": "RIS.png"
+                },
+                {
+                    "title": "RIS-ProjLTC",
+                    "version": "-",
+                    "image": "RIS-ProjLTC.png"
+                },
+                {
+                    "title": "Ours",
+                    "version": "-",
+                    "image": "Ours.png"
+                }
+            ]
+        },
+        {
+            "title": "MAPE",
+            "elements": [
+                {
+                    "title": "Uniform",
+                    "version": "-",
+                    "image": "Uniform-MAPE.png"
+                },
+                {
+                    "title": "ProjLTC",
+                    "version": "-",
+                    "image": "ProjLTC-MAPE.png"
+                },
+                {
+                    "title": "RIS",
+                    "version": "-",
+                    "image": "RIS-MAPE.png"
+                },
+                {
+                    "title": "RIS-ProjLTC",
+                    "version": "-",
+                    "image": "RIS-ProjLTC-MAPE.png"
+                },
+                {
+                    "title": "Ours",
+                    "version": "-",
+                    "image": "Ours-MAPE.png"
+                }
+            ]
+        }
+    ],
+    "stats": [
+        {
+            "title": "Stats",
+            "labels": [
+                "Uniform",
+                "ProjLTC",
+                "RIS",
+                "RIS-ProjLTC",
+                "Ours"
+            ],
+            "series": [
+                {
+                    "label": "MAPE",
+                    "data": [
+                        "0.661595",
+                        "0.632142",
+                        "0.186326",
+                        "0.169529",
+                        "0.170618"
+                    ],
+                    "track": {
+                        "x": [],
+                        "y": []
+                    }
+                }
+            ]
+        }
+    ]
+}
