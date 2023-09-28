@@ -229,36 +229,47 @@ window.wheelzoom = (function(){
 }());
 
 
-var ImageBox = function(parent, config) {
+var ImageBox = function(parent, config, scenes) {
     var self = this;
 
     var box = document.createElement('div');
     box.className = "image-box";
 
-    // var h1 = document.createElement('h1');
-    // h1.className = "title";
-    // h1.appendChild(document.createTextNode("Images"));
-    // box.appendChild(h1);
-
-    // var help = document.createElement('div');
-    // help.appendChild(document.createTextNode("Use mouse wheel to zoom in/out, click and drag to pan. Press keys [1], [2], ... to switch between individual images."));
-    // help.className = "help";
-    // box.appendChild(help);
-
     this.tree = [];
     this.selection = [];
-    this.buildTreeNode(config, 0, this.tree, box);
+    this.scenes = scenes;
+    this.sceneSelection = 0;
+    this.sceneSelectors = [];
+    this.config = config;
+    this.parent = parent;
+    this.box = box;
+    
+    // Create scene selector
+    this.sceneSelector = document.createElement("div")
+    this.sceneSelector.className = "selector-group"
+    box.appendChild(this.sceneSelector)
 
-    for (var i = 0; i < this.selection.length; ++i) {
-        this.selection[i] = 0;
+    // Create tab
+    for (var i = 0; i < scenes.length; i++) {
+        var selector = document.createElement('div');
+        selector.className = "selector selector-primary";
+
+        selector.appendChild(document.createTextNode(scenes[i][0]))
+        selector.addEventListener("click", function(idx, event) {
+            this.changeScene(idx);
+        }.bind(this, i));
+
+        // Add to tabs
+        this.sceneSelector.appendChild(selector);
+        this.sceneSelectors.push(selector);
     }
-    this.showContent(0, 0);
-    parent.appendChild(box);
 
+    this.changeScene(0);
     document.addEventListener("keypress", function(event) { self.keyPressHandler(event); });
+    parent.appendChild(box);
 }
 
-ImageBox.prototype.buildTreeNode = function(config, level, nodeList, parent) {
+ImageBox.prototype.buildTreeNode = function(config, level, nodeList, parent, path_prefix) {
 
     var self = this;
 
@@ -291,14 +302,14 @@ ImageBox.prototype.buildTreeNode = function(config, level, nodeList, parent) {
         if (typeof(config[i].elements) !== 'undefined') {
             // Recurse
             content = document.createElement('div');
-            this.buildTreeNode(config[i].elements, level+1, contentNode.children, content);
+            this.buildTreeNode(config[i].elements, level+1, contentNode.children, content, path_prefix);
             selector.appendChild(document.createTextNode(config[i].title));
         } else {
             // Create image
             content = document.createElement('div');
             content.className = "image-display";
             img = document.createElement("img")
-            img.src = "scenes/zero-day-(etg)/" + config[i].image;
+            img.src = path_prefix + config[i].image;
             wheelzoom(img, imageBoxSettings);
             var key = '';
             if (i < 9)
@@ -317,7 +328,7 @@ ImageBox.prototype.buildTreeNode = function(config, level, nodeList, parent) {
             // Create inset
             var inset = document.createElement('img');
             inset.className = "inset pixelated";
-            inset.style.backgroundImage = "url('" + "scenes/zero-day-(etg)/" + config[i].image + "')";
+            inset.style.backgroundImage = "url('" + path_prefix + config[i].image + "')";
             inset.style.backgroundRepeat = "no-repeat";
             inset.style.border = "0px solid black";
             inset.style.width  = Math.min(256, imageBoxSettings.width / config.length-4) + "px";
@@ -367,6 +378,36 @@ ImageBox.prototype.buildTreeNode = function(config, level, nodeList, parent) {
         }
         parent.appendChild(insetGroup);
     }
+}
+
+ImageBox.prototype.changeScene = function(idx) {
+    console.log(this.scenes[idx]);
+    console.log(this.config);
+    this.sceneSelection = idx;
+    for (let i = 0; i < this.sceneSelectors.length; i++) {
+        this.sceneSelectors[i].className = 'selector selector-primary';
+    }
+    this.sceneSelectors[idx].className = 'selector selector-primary active';
+
+    // Delete old image-viewer
+    let image_viewer = document.getElementById("image-viewer");
+    if (image_viewer) {
+        image_viewer.innerHTML = "";
+    } else {
+        image_viewer = document.createElement("div");
+        image_viewer.id = "image-viewer";
+        this.box.appendChild(image_viewer);
+    }
+
+    // Create new
+    this.selection.length = 0;
+    this.tree.length = 0;
+    this.buildTreeNode(this.config, 0, this.tree, image_viewer, this.scenes[idx][1]);
+
+    for (var i = 0; i < this.selection.length; ++i) {
+        this.selection[i] = 0;
+    }
+    this.showContent(0, 0);
 }
 
 ImageBox.prototype.showContent = function(level, idx) {

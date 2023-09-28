@@ -4,17 +4,16 @@ function setup() {
     content = document.getElementById("content");
     var box = document.getElementById('image-box');
 
-    var help = document.createElement('div');
-    var helpText = "Use mouse wheel to zoom in/out, click and drag to pan. Press keys [1], [2], ... to switch between individual images.";
-    if (!local) {
-        helpText += " Press [?] to see more keybindings.";
-    }
-    help.appendChild(document.createTextNode(helpText));
-    help.className = "help";
-    box.appendChild(help);
-
     if (local) {
-        new ImageBox(content, data['imageBoxes']);
+        scenes = [
+            ["Zero-Day (Glossy)", "scenes/zero-day-(etg)/"],
+            ["Bistro Exterior (Glossy)", "scenes/bistro-exterior-(etg)/"],
+            ["Bistro Interior (Glossy)", "scenes/bistro-interior-(etg)/"],
+            ["Zero-Day (Diffuse)", "scenes/zero-day-(etd)/"],
+            ["Bistro Exterior (Glossy)", "scenes/bistro-exterior-(etd)/"],
+            ["Bistro Interior (Glossy)", "scenes/bistro-interior-(etd)/"],
+        ];
+        new ImageBox(content, data['imageBoxes'], scenes);
     } else {
         var jeri = document.createElement('div');
         jeri.className = "jeri";
@@ -25,7 +24,4 @@ function setup() {
         
         content.appendChild(box);
     }
-    
-    // new ChartBox(content, data["stats"]);
-    new TableBox(content, "Statistics", data["stats"]);
 }

@@ -19,7 +19,7 @@ div.plot-box {
 }
 
 div.table-box {
-    padding-bottom: 20px;
+    overflow-x: scroll;
 }
 
 img{
@@ -32,6 +32,7 @@ div.image-display {
     height: auto;
     line-height: 0;
     margin-top: 0;
+    text-align: center;
     /*margin-left: auto;*/
     /*margin-right: auto;*/
     background: #222;
@@ -137,7 +138,6 @@ tr.insets {
 
 table.stats {
     border-collapse: separate;
-    border-spacing: 0;
     font-weight: normal;
     margin-left: auto;
     margin-right: auto;
@@ -151,7 +151,7 @@ td.stats {
 
 td.best-stat {
     font-weight: 600;
-    color: #5333ED;
+    color: hsl(204, 86%, 53%);
 }
 
 caption.stats {
