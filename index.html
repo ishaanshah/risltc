@@ -117,6 +117,9 @@
 <section class="hero">
   <div class="container is-widescreen">
       <img id="teaser" width="100%" src="./static/images/teaser.jpg" />
+      <h2 class="subtitle has-text-centered">
+      We show equal time comparison of our method with RIS on the Zero-Day (10K lights) scene. Our method achieves a lower Mean Absolute Percentage Error (MAPE) w.r.t a 1M spp reference.
+      </h2>
   </div>
 </section>
 
@@ -185,9 +188,28 @@
 <section class="section">
   <div class="container is-widescreen">
     <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h2 class="title is-3">References</h2>
+      <div class="column is-full">
+        <h2 class="title is-3">Acknowledgments</h2>
+        <div class="content has-text-justified">
+          We thank the reviewers of our SIGGRAPH Asia 2023 submission for their valuable comments and suggestions.
+          The renderer was built upon the amazing <a href="https://github.com/MomentsInGraphics/vulkan_renderer">vulkan_renderer</a> by <a href="https://momentsingraphics.de/index.html">Cristoph Peters</a>.
+          The image viewer is based upon <a href="https://github.com/joeylitalien/interactive-viewer">interactive-viewer</a>.
+        </div>
+      </div>
+    </div>
+  </div>
 
+  <div class="container is-widescreen">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full">
+        <h2 class="title is-3">References</h2>
+        <div class="content has-text-justified">
+          <ol>
+            <li>Benedikt Bitterli, Chris Wyman, Matt Pharr, Peter Shirley, Aaron Lefohn, and Wojciech Jarosz. 2020. Spatiotemporal reservoir resampling for real-time ray tracing with dynamic direct lighting. ACM Transactions on Graphics 39, 4 (2020).</li>
+            <li>Eric Heitz, Jonathan Dupuy, Stephen Hill, and David Neubelt. 2016. Real-Time Polygonal-Light Shading with Linearly Transformed Cosines. ACM Trans. Graph. 35, 4, Article 41 (Jul 2016), 8 pages. https://doi.org/10.1145/2897824.2925895</li>
+            <li>Christoph Peters. 2021. BRDF Importance Sampling for Polygonal Lights. ACM Trans. Graph. 40, 4, Article 140 (jul 2021), 14 pages.</li>
+          </ol>
+       </div>
       </div>
     </div>
   </div>
