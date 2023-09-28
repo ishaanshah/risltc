@@ -229,11 +229,11 @@ window.wheelzoom = (function(){
 }());
 
 
-var ImageBox = function(parent, config, scenes) {
+var ImageBox = function(parent, config, scenes, class_suffix) {
     var self = this;
 
     var box = document.createElement('div');
-    box.className = "image-box";
+    box.className = "image-box-" + class_suffix;
 
     this.tree = [];
     this.selection = [];
@@ -243,11 +243,12 @@ var ImageBox = function(parent, config, scenes) {
     this.config = config;
     this.parent = parent;
     this.box = box;
+    this.class_suffix = class_suffix;
     
     // Create scene selector
-    this.sceneSelector = document.createElement("div")
-    this.sceneSelector.className = "selector-group"
-    box.appendChild(this.sceneSelector)
+    let sceneSelector = document.createElement("div")
+    sceneSelector.className = "selector-group"
+    box.appendChild(sceneSelector)
 
     // Create tab
     for (var i = 0; i < scenes.length; i++) {
@@ -260,7 +261,7 @@ var ImageBox = function(parent, config, scenes) {
         }.bind(this, i));
 
         // Add to tabs
-        this.sceneSelector.appendChild(selector);
+        sceneSelector.appendChild(selector);
         this.sceneSelectors.push(selector);
     }
 
@@ -390,12 +391,12 @@ ImageBox.prototype.changeScene = function(idx) {
     this.sceneSelectors[idx].className = 'selector selector-primary active';
 
     // Delete old image-viewer
-    let image_viewer = document.getElementById("image-viewer");
+    let image_viewer = document.getElementById("image-viewer-"+this.class_suffix);
     if (image_viewer) {
         image_viewer.innerHTML = "";
     } else {
         image_viewer = document.createElement("div");
-        image_viewer.id = "image-viewer";
+        image_viewer.id = "image-viewer-" + this.class_suffix;
         this.box.appendChild(image_viewer);
     }
 
