@@ -66,7 +66,12 @@ index 665618b..4ffa51a 100644
 +            float W = res.w_sum / (m * res.sample_value);
          } else {
              W = 0.0;
-         }`;
+         }
+     }
+     vec3 result = (color * W) / LIGHT_SAMPLES;
+ }
+`;
+
 
 document.addEventListener('DOMContentLoaded', function () {
 var targetElement = document.getElementById('code-diff');
