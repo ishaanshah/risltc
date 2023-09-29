@@ -8,8 +8,8 @@ function setup() {
         ["Bistro Exterior (Glossy)", "scenes/bistro-exterior-(etg)/"],
         ["Bistro Interior (Glossy)", "scenes/bistro-interior-(etg)/"],
         ["Zero-Day (Diffuse)", "scenes/zero-day-(etd)/"],
-        ["Bistro Exterior (Glossy)", "scenes/bistro-exterior-(etd)/"],
-        ["Bistro Interior (Glossy)", "scenes/bistro-interior-(etd)/"],
+        ["Bistro Exterior (Diffuse)", "scenes/bistro-exterior-(etd)/"],
+        ["Bistro Interior (Diffuse)", "scenes/bistro-interior-(etd)/"],
     ];
     new ImageBox(content, data['imageBoxes'], scenes, "time")
 
@@ -19,8 +19,8 @@ function setup() {
         ["Bistro Exterior (Glossy)", "scenes/bistro-exterior/"],
         ["Bistro Interior (Glossy)", "scenes/bistro-interior/"],
         ["Zero-Day (Diffuse)", "scenes/zero-day-(diffuse)/"],
-        ["Bistro Exterior (Glossy)", "scenes/bistro-exterior-(diffuse)/"],
-        ["Bistro Interior (Glossy)", "scenes/bistro-interior-(diffuse)/"],
+        ["Bistro Exterior (Diffuse)", "scenes/bistro-exterior-(diffuse)/"],
+        ["Bistro Interior (Diffuse)", "scenes/bistro-interior-(diffuse)/"],
     ];
     new ImageBox(content, data['imageBoxes'], scenes, "sample")
 }
