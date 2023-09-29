@@ -170,7 +170,14 @@
           We use three scenes with varying number and sizes of area lights
           for the evaluation: (1) <b>Zero-Day, 10K lights</b>, (2) <b>Bistro Interior, 2K
           lights</b> and (3) <b>Bistro Exterior, 30K lights</b>. For each scene, we test
-          the method on a diffuse and glossy version of the scene.
+          the method on a diffuse and glossy version of the scene. We compare our results
+          against the following four methods:
+          <ul>
+            <li><b>Uniform</b>: Uniform light & uniform area sampling</li>
+            <li><b>ProjLTC</b>: Uniform light sampling & Projecte Solid Angle Sampling [Peters, 2021]</li>
+            <li><b>RIS</b>: RIS with uniform light & uniform area sampling [Tablot 2005, Bitterli 2020]</li>
+            <li><b>RIS-ProjLTC</b>: Naïve combination of RIS with ProjLTC</li>
+          </ul>
         </div>
         <div class="content" id="content-time">
           <h4 class="title is-4">Equal Time Comparsion</h4>
@@ -205,6 +212,7 @@
         <h2 class="title is-3">References</h2>
         <div class="content has-text-justified">
           <ol>
+            <li>Justin F. Talbot, David Cline, and Parris Egbert. 2005. Importance Resampling for Global Illumination. In EGSR.</li>
             <li>Benedikt Bitterli, Chris Wyman, Matt Pharr, Peter Shirley, Aaron Lefohn, and Wojciech Jarosz. 2020. Spatiotemporal reservoir resampling for real-time ray tracing with dynamic direct lighting. ACM Transactions on Graphics 39, 4 (2020).</li>
             <li>Eric Heitz, Jonathan Dupuy, Stephen Hill, and David Neubelt. 2016. Real-Time Polygonal-Light Shading with Linearly Transformed Cosines. ACM Trans. Graph. 35, 4, Article 41 (Jul 2016), 8 pages. https://doi.org/10.1145/2897824.2925895</li>
             <li>Christoph Peters. 2021. BRDF Importance Sampling for Polygonal Lights. ACM Trans. Graph. 40, 4, Article 140 (jul 2021), 14 pages.</li>
