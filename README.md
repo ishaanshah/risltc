@@ -1,7 +1,7 @@
 This renderer is based upon the [vulkan_renderer](https://github.com/MomentsInGraphics/vulkan_renderer)
 written by [Christoph Peters](https://momentsingraphics.de).
 It contains the implementation for the paper "Combining Resampled
-Importance and wrojected Solid Angle Samplings for Many Area Light Rendering"
+Importance and projected Solid Angle Samplings for Many Area Light Rendering"
 The renderer is written in C using Vulkan. For more information see:
 https://ishaanshah.github.io/risltc and https://momentsingraphics.de/ToyRendererOverview.html
 
