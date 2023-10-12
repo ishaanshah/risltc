@@ -491,6 +491,8 @@ void write_lights(void* data, application_t* app) {
 
 //! Frees objects and zeros
 void destroy_light_buffers(light_buffers_t* light_buffers, const device_t* device, VmaAllocator allocator) {
+	if(!light_buffers->buffer || !light_buffers->allocation) return;
+
 	vmaDestroyBuffer(allocator, light_buffers->buffer, light_buffers->allocation);
 	memset(light_buffers, 0, sizeof(*light_buffers));
 }
