@@ -82,7 +82,9 @@ int get_imgui_frame(imgui_frame_t* frame, imgui_handle_t imgui) {
 	size_t command_list_index_offset = 0;
 	for (int i = 0; i != draw_data->CmdListsCount; ++i) {
 		ImDrawList* command_list = draw_data->CmdLists[i];
-		for (int j = 0; j != command_list->CmdBuffer.size(); ++j) {
+
+		const int sz1 = command_list->CmdBuffer.size();
+		for (int j = 0; j != sz1; ++j) {
 			const ImDrawCmd* source_draw = &draw_data->CmdLists[i]->CmdBuffer[j];
 			if (frame->draw_count == frame->draws_size)
 				return 1;
@@ -99,7 +101,9 @@ int get_imgui_frame(imgui_frame_t* frame, imgui_handle_t imgui) {
 		}
 		// Copy vertex and index data. Indices need an offset.
 		memcpy(frame->vertices + command_list_vertex_offset, command_list->VtxBuffer.Data, sizeof(imgui_vertex_t) * (size_t) command_list->VtxBuffer.size());
-		for (size_t j = 0; j != (size_t) command_list->IdxBuffer.size(); ++j)
+
+		const size_t sz2 = (size_t) command_list->IdxBuffer.size();
+		for (size_t j = 0; j != sz2; ++j)
 			frame->indices[command_list_index_offset + j] = command_list->IdxBuffer[(int) j] + (uint16_t) command_list_vertex_offset;
 		command_list_vertex_offset += command_list->VtxBuffer.size();
 		command_list_index_offset += command_list->IdxBuffer.size();

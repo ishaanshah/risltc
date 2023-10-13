@@ -186,7 +186,7 @@ int load_ltc_table(ltc_table_t* table, const device_t* device, const char* direc
 		.fresnel_index_summand = 0.0f,
 		.roughness_factor = (float) (table->roughness_count - 1)/ (float) table->roughness_count,
 		.roughness_summand = 0.5f / (float) table->roughness_count,
-		.inclination_factor = (float) (table->inclination_count - 1) / (0.5f * M_PI_F * table->inclination_count),
+		.inclination_factor = (float) (table->inclination_count - 1) / (M_HALF_PI * table->inclination_count),
 		.inclination_summand = 0.5f / (float) table->inclination_count
 	};
 	table->constants = constants;

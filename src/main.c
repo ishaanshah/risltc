@@ -146,7 +146,7 @@ void specify_default_scene(scene_specification_t* scene) {
 	scene->polygonal_light_count = 1;
 	polygonal_light_t default_light;
 	memset(&default_light, 0, sizeof(default_light));
-	default_light.rotation_angles[0] = 0.5f * M_PI_F;
+	default_light.rotation_angles[0] = M_HALF_PI;
 	default_light.scaling_x = default_light.scaling_y = 1.0f;
 	default_light.radiant_flux[0] = default_light.radiant_flux[1] = default_light.radiant_flux[2] = 1.0f;
 	set_polygonal_light_vertex_count(&default_light, 4);
@@ -995,17 +995,20 @@ int create_shading_pass(shading_pass_t* pass, application_t* app)
 		format_uint("ERROR_DISPLAY_SPECULAR=%u", error_display_specular),
 		format_uint("ERROR_INDEX=%u", error_index),
 	};
+
+	const uint32_t sz_defines = COUNT_OF(defines);
+
 	// Compile a fragment shader
 	shader_request_t fragment_shader_request = {
 		.shader_file_path = "src/shaders/shading_pass.frag.glsl",
 		.include_path = "src/shaders",
 		.entry_point = "main",
 		.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.define_count = COUNT_OF(defines),
+		.define_count = sz_defines,
 		.defines = defines
 	};
 	int compile_result = compile_glsl_shader_with_second_chance(&pass->fragment_shader, device, &fragment_shader_request);
-	for (uint32_t i = 0; i != COUNT_OF(defines); ++i)
+	for (uint32_t i = 0; i != sz_defines; ++i)
 		free(defines[i]);
 	if (compile_result) {
 		printf("Failed to compile the fragment shader for the shading pass.\n");
@@ -1359,17 +1362,19 @@ int create_copy_pass(copy_pass_t * pass, application_t* app) {
 		format_uint("OUTPUT_LINEAR_RGB=%u", output_linear_rgb),
 	};
 
+	const uint32_t sz_defines1 = COUNT_OF(defines);
+
 	// Compile a fragment shader
 	shader_request_t fragment_shader_request = {
 		.shader_file_path = "src/shaders/copy_pass.frag.glsl",
 		.include_path = "src/shaders",
 		.entry_point = "main",
 		.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.define_count = COUNT_OF(defines),
+		.define_count = sz_defines1,
 		.defines = defines
 	};
 	int compile_result = compile_glsl_shader_with_second_chance(&pass->fragment_shader, device, &fragment_shader_request);
-	for (uint32_t i = 0; i != COUNT_OF(defines); ++i)
+	for (uint32_t i = 0; i != sz_defines1; ++i)
 		free(defines[i]);
 	if (compile_result) {
 		printf("Failed to compile the fragment shader for the copy pass.\n");
@@ -1554,19 +1559,22 @@ int create_interface_pass(interface_pass_t* pass, const device_t* device, imgui_
 		format_uint("VIEWPORT_WIDTH=%u", swapchain->extent.width),
 		format_uint("VIEWPORT_HEIGHT=%u", swapchain->extent.height),
 	};
+
+	const uint32_t sz_gui_defines = COUNT_OF(gui_defines);
+
 	shader_request_t gui_vertex_request = {
 		.shader_file_path = "src/shaders/imgui.vert.glsl",
 		.include_path = "src/shaders",
 		.entry_point = "main",
 		.stage = VK_SHADER_STAGE_VERTEX_BIT,
-		.define_count = COUNT_OF(gui_defines), .defines = gui_defines
+		.define_count = sz_gui_defines, .defines = gui_defines
 	};
 	shader_request_t gui_fragment_request = {
 		.shader_file_path = "src/shaders/imgui.frag.glsl",
 		.include_path = "src/shaders",
 		.entry_point = "main",
 		.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.define_count = COUNT_OF(gui_defines), .defines = gui_defines
+		.define_count = sz_gui_defines, .defines = gui_defines
 	};
 	if (compile_glsl_shader_with_second_chance(&pass->vertex_shader, device, &gui_vertex_request)
 		|| compile_glsl_shader_with_second_chance(&pass->fragment_shader, device, &gui_fragment_request))
