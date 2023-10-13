@@ -36,10 +36,11 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 	ImGui::Text("Controls [?]");
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip(
-			"LMB			Interact with GUI\n"
-			"RMB			Rotate camera\n"
-			"WASDQE	Move camera\n"
-			"Ctrl			  Move slower\n"
+			"LMB			Rotate camera\n"
+			"WASDRF, arrows	Move camera\n"
+			"IKJL			Rotate camera\n"
+			",.			FOV camera\n"
+			"Ctrl			Move slower\n"
 			"Shift			Move faster\n"
 			"F1				Toggle user interface\n"
 			"F2				Toggle v-sync\n"
@@ -61,13 +62,16 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 
 	// Scene selection
 	int scene_index = 0;
-	for (; scene_index != COUNT_OF(g_scene_paths); ++scene_index) {
+	const uint32_t sz_g_scene_paths = COUNT_OF(g_scene_paths);
+
+	for (; scene_index != sz_g_scene_paths; ++scene_index) {
 		int offset = (int) strlen(scene->file_path) - (int) strlen(g_scene_paths[scene_index][1]);
 		if (offset >= 0 && strcmp(scene->file_path + offset, g_scene_paths[scene_index][1]) == 0)
 			break;
 	}
-	const char* scene_names[COUNT_OF(g_scene_paths)];
-	for (uint32_t i = 0; i != COUNT_OF(g_scene_paths); ++i)
+	const char* scene_names[sz_g_scene_paths];
+
+	for (uint32_t i = 0; i != sz_g_scene_paths; ++i)
 		scene_names[i] = g_scene_paths[i][0];
 	if (ImGui::Combo("Scene", &scene_index, scene_names, COUNT_OF(scene_names))) {
 		free(scene->file_path);
@@ -79,6 +83,8 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 		updates->quick_load = updates->reload_scene = VK_TRUE;
 	}
 
+	//tigra: unneeded settings
+	/*
 	const char* polygon_sampling_techniques[sample_polygon_count];
 	polygon_sampling_techniques[sample_polygon_baseline] = "Baseline (zero cost, bogus results)";
 	polygon_sampling_techniques[sample_polygon_area_turk] = "Uniform Area Sampling (Turk)";
@@ -87,7 +93,9 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 	polygon_sampling_techniques[sample_polygon_ltc_cp] = "LTC (Ours)";
 	if (ImGui::Combo("Polygon sampling", (int*) &settings->polygon_sampling_technique,  polygon_sampling_techniques, sample_polygon_count))
 		updates->change_shading = VK_TRUE;
+	*/
 
+	/*
 	// Sampling settings
 	bool show_mis = settings->polygon_sampling_technique == sample_polygon_projected_solid_angle || settings->polygon_sampling_technique == sample_polygon_projected_solid_angle_biased;
 	if (show_mis) {
@@ -103,6 +111,7 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 	}
 	if (show_mis && (settings->mis_heuristic == mis_heuristic_optimal_clamped || settings->mis_heuristic == mis_heuristic_optimal))
 		if(ImGui::DragFloat("MIS visibility estimate", &settings->mis_visibility_estimate, 0.01f, 0.0f, 1.0f, "%.2f")) *reset_accum = 1;
+	*/
 
 	{
 		// Light sampling strategy
@@ -140,9 +149,13 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 	ImGui::SameLine();
 	if (ImGui::Button("Quick load"))
 		updates->quick_load = VK_TRUE;
+
+	/*
 	// A button to reproduce experiments from the publication
 	if (ImGui::Button("Reproduce experiments"))
 		app->experiment_list.next = 0;
+	*/
+
 	// That's all
 	ImGui::End();
 	ImGui::EndFrame();

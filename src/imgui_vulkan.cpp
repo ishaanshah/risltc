@@ -25,9 +25,12 @@ imgui_handle_t init_imgui(struct GLFWwindow* window) {
 	// Register callbacks and set the font scale
 	ImGui_ImplGlfw_InitForVulkan(window, true);
 	ImGui::SetCurrentContext(context);
+
+	/*
 	ImGuiIO& io = ImGui::GetIO();
 	io.FontDefault = io.Fonts->AddFontFromFileTTF("data/LinBiolinum_Rah.ttf", 26.0f);
 	ImGui::GetStyle().ScaleAllSizes(1.5f);
+	*/
 	return result;
 }
 

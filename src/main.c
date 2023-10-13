@@ -191,15 +191,19 @@ uint32_t get_max_polygonal_light_vertex_count(const scene_specification_t* scene
 uint32_t get_max_polygon_vertex_count(const scene_specification_t* scene_specification, const render_settings_t* render_settings) {
 	uint32_t max_polygonal_light_vertex_count = get_max_polygonal_light_vertex_count(scene_specification);
 	switch (render_settings->polygon_sampling_technique) {
+	/*
 	case sample_polygon_projected_solid_angle:
 	case sample_polygon_projected_solid_angle_biased:
+	*/
 	case sample_polygon_ltc_cp:
 		// Each time the polygon is clipped, that may create another vertex
 		return max_polygonal_light_vertex_count + 1;
+	/*
 	case sample_polygon_baseline:
 	case sample_polygon_area_turk:
 	default:
 		return max_polygonal_light_vertex_count;
+	*/
 	}
 }
 
@@ -228,7 +232,7 @@ void specify_default_render_settings(render_settings_t* settings) {
 	settings->light_sampling = light_reservoir;
 	settings->error_display = error_display_none;
 	settings->error_min_exponent = -7.0f;
-	settings->accum = VK_FALSE;
+	settings->accum = VK_TRUE;
 	settings->show_polygonal_lights = VK_FALSE;
 	settings->animate_noise = VK_TRUE;
 	settings->v_sync = VK_FALSE;

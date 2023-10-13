@@ -145,14 +145,19 @@ int create_vulkan_device(device_t* device, const char* application_internal_name
 		VK_KHR_RAY_QUERY_EXTENSION_NAME,
 	};
 	device->device_extension_count = COUNT_OF(base_device_extension_names);
-	if (device->ray_tracing_supported)
-		device->device_extension_count += COUNT_OF(ray_tracing_device_extension_names);
+	#define sz_base_device_extension_names (device->device_extension_count)
+	uint32_t sz_ray_tracing_device_extension_names = 0;
+
+	if (device->ray_tracing_supported) {
+		sz_ray_tracing_device_extension_names = COUNT_OF(ray_tracing_device_extension_names);
+		device->device_extension_count += sz_ray_tracing_device_extension_names;
+	}
 	device->device_extension_names = malloc(sizeof(char*) * device->device_extension_count);
-	for (uint32_t i = 0; i != COUNT_OF(base_device_extension_names); ++i)
+	for (uint32_t i = 0; i != sz_base_device_extension_names; ++i)
 		device->device_extension_names[i] = base_device_extension_names[i];
 	if (device->ray_tracing_supported)
-		for (uint32_t i = 0; i != COUNT_OF(ray_tracing_device_extension_names); ++i)
-			device->device_extension_names[COUNT_OF(base_device_extension_names) + i] = ray_tracing_device_extension_names[i];
+		for (uint32_t i = 0; i != sz_ray_tracing_device_extension_names; ++i)
+			device->device_extension_names[sz_base_device_extension_names + i] = ray_tracing_device_extension_names[i];
 	// Create a device
 	float queue_priorities[1] = { 0.0f };
 	VkDeviceQueueCreateInfo queue_info = {
@@ -389,7 +394,9 @@ int create_or_resize_swapchain(swapchain_t* swapchain, const device_t* device, V
 		VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
 		VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
 	};
-	for (uint32_t i = 0; i < COUNT_OF(composite_alpha_flags); ++i) {
+
+	const uint32_t sz_composite_alpha_flags = COUNT_OF(composite_alpha_flags);
+	for (uint32_t i = 0; i < sz_composite_alpha_flags; ++i) {
 		if (surface_capabilities.supportedCompositeAlpha & composite_alpha_flags[i]) {
 			composite_alpha = composite_alpha_flags[i];
 			break;
@@ -1007,7 +1014,9 @@ int compile_glsl_shader(shader_t* shader, const device_t* device, const shader_r
 		"glslangValidator -V100 --target-env spirv1.5 ",
 		"-S ", get_shader_stage_name(request->stage),
 #ifndef NDEBUG
-		" -g -Od ",
+		//" -g -Od ",
+		//" -Os --ku -g0 ",
+		" --ku -g0 ",
 #endif
 		concatenated_defines,
 		" -I\"", request->include_path, "\" ",

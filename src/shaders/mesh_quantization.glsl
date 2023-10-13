@@ -13,15 +13,17 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define factor     1.9999694819562066071564812695506f
+#define summand   -0.99999999976716225075613913543351f
 
 /*! Decodes a normal encoded into two 16-bit UNORM numbers using octahedral
 	maps. The returned normal vector is guaranteed to be normalized.*/
 vec3 decode_normal_32_bit(vec2 octahedral_normal) {
 	// To be able to represent 0 exactly, -1.0f corresponds to the
 	// second-smallest fixed point number. Compensate for that.
-	const uint bit_count = 16;
-	const float factor = 2.0f * (65534.0f / 65535.0f);
-	const float summand = -(32768.0f / 65535.0f) * factor;
+	//const uint bit_count = 16;
+	//const float factor = 2.0f * (65534.0f / 65535.0f);
+	//const float summand = -(32768.0f / 65535.0f) * factor;
 	octahedral_normal = fma(octahedral_normal, vec2(factor), vec2(summand));
 	// Undo the octahedral map
 	vec3 normal = vec3(octahedral_normal.xy, 1.0f - abs(octahedral_normal.x) - abs(octahedral_normal.y));

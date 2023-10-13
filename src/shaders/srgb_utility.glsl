@@ -13,6 +13,10 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define INV_2_4		 0.41666666666666666666666666666667f
+#define INV_12_92	 0.07739938080495356037151702786378f
+#define INV_1_055	 0.94786729857819905213270142180095f
+#define INV055_1_055 0.05213270142180094786729857819905f
 
 //! Converts linear RGB values (rec. 709) between 0 and 1 to sRGB between 0 and
 //! 1. Includes clamping of out of gamut colors. This function applies to one
@@ -21,7 +25,7 @@ float convert_linear_to_srgb(float linear_channel) {
     linear_channel = clamp(linear_channel, 0.0f, 1.0f);
 	return (linear_channel <= 0.0031308f)
 		? (12.92f * linear_channel)
-		: (1.055f * pow(linear_channel, 1.0f / 2.4f) - 0.055f);
+		: (1.055f * pow(linear_channel, INV_2_4) - 0.055f);
 }
 
 //! Vector version of convert_linear_to_srgb()
@@ -41,8 +45,8 @@ vec3 convert_linear_rgb_to_srgb(vec3 linear_rgb) {
 float convert_srgb_to_linear(float srgb_channel) {
     srgb_channel = clamp(srgb_channel, 0.0f, 1.0f);
 	return (srgb_channel <= 0.04045f)
-		? ((1.0f / 12.92f) * srgb_channel)
-		: pow(fma(srgb_channel, 1.0f / 1.055f, 0.055f / 1.055f), 2.4f);
+		? ((INV_12_92) * srgb_channel)
+		: pow(fma(srgb_channel, INV_1_055, INV055_1_055), 2.4f);
 }
 //! Three-channel version of convert_srgb_to_linear()
 vec3 convert_srgb_to_linear_rgb(vec3 srgb) {
