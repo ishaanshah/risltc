@@ -47,10 +47,7 @@ void main() {
 		g_out_color.z = fma(prev_color.z, float(g_accum_num), curr_color.z);
 		g_out_color.w = fma(prev_color.w, float(g_accum_num), curr_color.w);
 
-		g_out_color.x = fma(g_out_color.x, 1 / float(g_accum_num+1), 0.0);
-		g_out_color.y = fma(g_out_color.y, 1 / float(g_accum_num+1), 0.0);
-		g_out_color.z = fma(g_out_color.z, 1 / float(g_accum_num+1), 0.0);
-		g_out_color.w = fma(g_out_color.w, 1 / float(g_accum_num+1), 0.0);
+		g_out_color /= float(g_accum_num+1);
 	}
 
 }

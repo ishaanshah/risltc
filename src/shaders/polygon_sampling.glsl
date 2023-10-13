@@ -112,70 +112,6 @@ float positive_atan(float tangent) {
 }
 
 
-/*! Prepares all intermediate values to sample a triangle fan around vertex 0
-	(e.g. a convex polygon) proportional to solid angle using our method.
-	\param vertex_count Number of vertices forming the polygon.
-	\param vertices List of vertex locations.
-	\param shading_position The location of the shading point.
-	\return Input for sample_solid_angle_polygon().*/
-solid_angle_polygon_t prepare_solid_angle_polygon_sampling(uint vertex_count, vec3 vertices[MAX_POLYGON_VERTEX_COUNT], vec3 shading_position) {
-	solid_angle_polygon_t polygon;
-	polygon.vertex_count = vertex_count;
-	// Normalize vertex directions
-	[[unroll]]
-	for (uint i = 0; i != MAX_POLYGON_VERTEX_COUNT; ++i) {
-		polygon.vertex_dirs[i] = normalize(vertices[i] - shading_position);
-	}
-	// Prepare a Householder transform that maps vertex 0 onto (+/-1, 0, 0). We
-	// only store the yz-components of that Householder vector and a factor of
-	// 2.0f / sqrt(abs(polygon.vertex_dirs[0].x) + 1.0f) is pulled in there to
-	// save on multiplications later. This approach is necessary to avoid
-	// numerical instabilities in determinant computation below.
-	float householder_sign = (polygon.vertex_dirs[0].x > 0.0f) ? -1.0f : 1.0f;
-	vec2 householder_yz = polygon.vertex_dirs[0].yz * (1.0f / (abs(polygon.vertex_dirs[0].x) + 1.0f));
-	// Compute solid angles and prepare sampling
-	polygon.solid_angle = 0.0f;
-	float previous_dot_1_2 = dot(polygon.vertex_dirs[0], polygon.vertex_dirs[1]);
-	[[unroll]]
-	for (uint i = 0; i != MAX_POLYGON_VERTEX_COUNT - 2; ++i) {
-		if (i >= 1 && i + 2 >= vertex_count) break;
-		// We look at one triangle of the triangle fan at a time
-		vec3 vertices[3] = {
-			polygon.vertex_dirs[i + 1],
-			polygon.vertex_dirs[0],
-			polygon.vertex_dirs[i + 2]};
-		float dot_0_1 = previous_dot_1_2;
-		float dot_0_2 = dot(vertices[0], vertices[2]);
-		float dot_1_2 = dot(vertices[1], vertices[2]);
-		previous_dot_1_2 = dot_1_2;
-		// Compute the bottom right minor of vertices after application of the
-		// Householder transform
-		float dot_householder_0 = fma(-householder_sign, vertices[0].x, dot_0_1);
-		float dot_householder_2 = fma(-householder_sign, vertices[2].x, dot_1_2);
-		mat2 bottom_right_minor = mat2(
-			fma(vec2(-dot_householder_0), householder_yz, vertices[0].yz),
-			fma(vec2(-dot_householder_2), householder_yz, vertices[2].yz));
-		// The absolute value of the determinant of vertices equals the 2x2
-		// determinant because the Householder transform turns the first column
-		// into (+/-1, 0, 0)
-		float simplex_volume = abs(determinant(bottom_right_minor));
-		// Compute the solid angle of the triangle using a formula proposed by:
-		// A. Van Oosterom and J. Strackee, 1983, The Solid Angle of a
-		// Plane Triangle, IEEE Transactions on Biomedical Engineering 30:2
-		// https://doi.org/10.1109/TBME.1983.325207
-		float dot_0_2_plus_1_2 = dot_0_2 + dot_1_2;
-		float one_plus_dot_0_1 = 1.0f + dot_0_1;
-		float tangent = simplex_volume / (one_plus_dot_0_1 + dot_0_2_plus_1_2);
-		float half_triangle_solid_angle = positive_atan(tangent);
-		polygon.solid_angle += half_triangle_solid_angle + half_triangle_solid_angle;
-		polygon.fan_solid_angles[i] = polygon.solid_angle;
-		// Some intermediate results from above help us with sampling
-		polygon.triangle_parameters[i] = vec3(simplex_volume, dot_0_2_plus_1_2, one_plus_dot_0_1);
-	}
-	return polygon;
-}
-
-
 /*! An implementation of mix() using two fused-multiply add instructions. Used
 	because the native mix() implementation had stability issues in a few
 	spots. Credit to Fabian Giessen's blog, see:
@@ -183,45 +119,6 @@ solid_angle_polygon_t prepare_solid_angle_polygon_sampling(uint vertex_count, ve
 	*/
 float mix_fma(float x, float y, float a) {
 	return fma(a, y, fma(-a, x, x));
-}
-
-
-/*! Given the output of prepare_solid_angle_polygon_sampling(), this function
-	maps the given random numbers in the range from 0 to 1 to a normalized
-	direction vector providing a sample of the solid angle of the polygon in
-	the original space (used for arguments of
-	prepare_solid_angle_polygon_sampling()). Samples are distributed in
-	proportion to solid angle assuming uniform inputs.*/
-vec3 sample_solid_angle_polygon(solid_angle_polygon_t polygon, vec2 random_numbers) {
-	// Decide which triangle needs to be sampled
-	float target_solid_angle = polygon.solid_angle * random_numbers[0];
-	float subtriangle_solid_angle = target_solid_angle;
-	vec3 parameters = polygon.triangle_parameters[0];
-	vec3 vertices[3] = {
-		polygon.vertex_dirs[1], polygon.vertex_dirs[0], polygon.vertex_dirs[2]
-	};
-	[[unroll]]
-	for (uint i = 0; i != MAX_POLYGON_VERTEX_COUNT - 3; ++i) {
-		if (i + 3 >= polygon.vertex_count || polygon.fan_solid_angles[i] >= target_solid_angle) break;
-		subtriangle_solid_angle = target_solid_angle - polygon.fan_solid_angles[i];
-		vertices[0] = polygon.vertex_dirs[i + 2];
-		vertices[2] = polygon.vertex_dirs[i + 3];
-		parameters = polygon.triangle_parameters[i + 1];
-	}
-	// Construct a new vertex 2 on the arc between vertices 0 and 2 such that
-	// the resulting triangle has solid angle subtriangle_solid_angle
-	vec2 cos_sin = vec2(cos(0.5f * subtriangle_solid_angle), sin(0.5f * subtriangle_solid_angle));
-	vec3 offset = vertices[0] * (parameters[0] * cos_sin.x - parameters[1] * cos_sin.y) + vertices[2] * (parameters[2] * cos_sin.y);
-	vec3 new_vertex_2 = fma(2.0f * vec3(dot(vertices[0], offset) / dot(offset, offset)), offset, -vertices[0]);
-	// Now sample the line between vertex 1 and the newly created vertex 2
-	float s2 = dot(vertices[1], new_vertex_2);
-	float s = mix_fma(1.0f, s2, random_numbers[1]);
-	float denominator = fma(-s2, s2, 1.0f);
-	float t_normed = sqrt(fma(-s, s, 1.0f) / denominator);
-	// s2 may exceed one due to rounding error. random_numbers[1] is the
-	// limit of t_normed for s2 -> 1.
-	t_normed = (denominator > 0.0f) ? t_normed : random_numbers[1];
-	return fma(-t_normed, s2, s) * vertices[1] + t_normed * new_vertex_2;
 }
 
 
@@ -290,6 +187,7 @@ vec2 rotate_90(vec2 input_vector) {
 //! \return true iff the given ellipse is marked as inner ellipse, i.e. iff the
 //!		spherical polygon that is bounded by it is further away from the zenith
 //!		than this ellipse.
+/*
 bool is_inner_ellipse(vec2 ellipse) {
 	// If the implementation below causes you trouble, e.g. because you want to
 	// port to a different language, you may replace it by the commented line
@@ -298,13 +196,19 @@ bool is_inner_ellipse(vec2 ellipse) {
 	// Extract the sign bit from ellipse.x (to be able to tell apart +0 and -0)
 	return (floatBitsToUint(ellipse.x) & 0x80000000) != 0;
 }
+*/
 
+#define is_inner_ellipse(ellipse) ((floatBitsToUint(ellipse.x) & 0x80000000) != 0)
 
 //! \return true iff the given polygon contains the zenith (also known as
 //!		normal vector).
+/*
 bool is_central_case(projected_solid_angle_polygon_t polygon) {
 	return polygon.inner_ellipse_0.x > 0.0f;
 }
+*/
+
+#define is_central_case(polygon) (polygon.inner_ellipse_0.x > 0.0f)
 
 
 /*! Takes the great circle for the plane through the origin and the given two
@@ -344,9 +248,13 @@ float get_ellipse_det(vec2 ellipse) {
 
 //! Returns the reciprocal square root of the ellipse determinant produced by
 //! get_ellipse_det().
+/*
 float get_ellipse_rsqrt_det(vec2 ellipse) {
 	return inversesqrt(get_ellipse_det(ellipse));
 }
+*/
+
+#define get_ellipse_rsqrt_det(ellipse) (inversesqrt(get_ellipse_det(ellipse)))
 
 //! \return Reciprocal square of get_ellipse_direction_factor(ellipse, dir)
 float get_ellipse_direction_factor_rsq(vec2 ellipse, vec2 dir) {
@@ -361,9 +269,13 @@ float get_ellipse_direction_factor_rsq(vec2 ellipse, vec2 dir) {
 	\param dir The direction vector to be scaled onto the ellipse.
 	\return get_ellipse_direction_factor(ellipse, dir) * dir is a point on
 		the ellipse.*/
+/*		
 float get_ellipse_direction_factor(vec2 ellipse, vec2 dir) {
 	return inversesqrt(get_ellipse_direction_factor_rsq(ellipse, dir));
 }
+*/
+
+#define get_ellipse_direction_factor(ellipse, dir) (inversesqrt(get_ellipse_direction_factor_rsq(ellipse, dir)))
 
 //! Like get_ellipse_direction_factor() but assumes that the given direction is
 //! normalized. Faster.
@@ -825,82 +737,4 @@ vec3 sample_projected_solid_angle_polygon(projected_solid_angle_polygon_t polygo
 	// Construct the sample
 	sampled_dir.z = sqrt(max(0.0f, fma(-sampled_dir.x, sampled_dir.x, fma(-sampled_dir.y, sampled_dir.y, 1.0f))));
 	return sampled_dir;
-}
-
-
-/*! Determines the error of a sample from the projected solid angle of a
-	polygon due to the iterative procedure.
-	\param polygon Output of prepare_projected_solid_angle_polygon_sampling().
-	\param random_numbers The value passed for random_numbers in
-		sample_projected_solid_angle_polygon().
-	\param sampled_dir The direction returned by
-		sample_projected_solid_angle_polygon().
-	\return The first component is the signed backward error: The difference
-		between random_number_0 and the random number that would yield
-		sampled_dir with perfect computation. The second component is the
-		backward error, multiplied by the projected solid angle of the polygon.
-		The third component is the signed forward error (at least a first-order
-		estimate of it): The difference between the exact result of sampling
-		and the actual result in radians. Note that all of these are subject
-		to rounding error themselves. In the central case, zero is returned.*/
-vec3 compute_projected_solid_angle_polygon_sampling_error(projected_solid_angle_polygon_t polygon, vec2 random_numbers, vec3 sampled_dir) {
-	float target_projected_solid_angle = random_numbers[0] * polygon.projected_solid_angle;
-	// In the central case, the sampling procedure is exact except for rounding
-	// error
-	if (is_central_case(polygon)) {
-		return vec3(0.0f);
-	}
-	// In the other case, we repeat some computations to find the error
-	else {
-		// Select a sector and copy the relevant attributes
-		float sector_projected_solid_angle;
-		vec2 outer_ellipse;
-		vec2 inner_ellipse = polygon.inner_ellipse_0;
-		vec2 dir_0;
-		[[unroll]]
-		for (uint i = 0; i != MAX_POLYGON_VERTEX_COUNT - 1; ++i) {
-			if ((i > 1 && i + 1 == polygon.vertex_count) || (i > 0 && target_projected_solid_angle < 0.0f))
-				break;
-			sector_projected_solid_angle = polygon.sector_projected_solid_angles[i];
-			target_projected_solid_angle -= sector_projected_solid_angle;
-			vec2 vertex_ellipse = polygon.ellipses[i];
-			bool vertex_inner = is_inner_ellipse(vertex_ellipse);
-			if (i == 0) {
-				outer_ellipse = vertex_ellipse;
-			}
-			else {
-				inner_ellipse = vertex_inner ? vertex_ellipse : inner_ellipse;
-				outer_ellipse = vertex_inner ? outer_ellipse : vertex_ellipse;
-			}
-			dir_0 = polygon.vertices[i];
-		}
-		target_projected_solid_angle += sector_projected_solid_angle;
-		// Compute the area in the sector from sampled_dir and dir_0 between
-		// the two ellipses
-		float sampled_projected_solid_angle = get_area_between_ellipses_in_sector(
-			inner_ellipse, get_ellipse_rsqrt_det(inner_ellipse),
-			outer_ellipse, get_ellipse_rsqrt_det(outer_ellipse),
-			dir_0, sampled_dir.xy);
-		// Compute error in the projected solid angle
-		float scaled_backward_error = target_projected_solid_angle - sampled_projected_solid_angle;
-		float backward_error = scaled_backward_error / polygon.projected_solid_angle;
-		// Evaluate the derivative of the sampled direction with respect to the
-		// projected solid angle
-		mat2 constraint_matrix;
-		vec2 inner_dir = ellipse_transform(inner_ellipse, sampled_dir.xy);
-		vec2 outer_dir = ellipse_transform(outer_ellipse, sampled_dir.xy);
-		float inner_factor = 1.0f / dot(sampled_dir.xy, inner_dir);
-		float outer_factor = 1.0f / dot(sampled_dir.xy, outer_dir);
-		constraint_matrix[0] = 0.5f * (inner_factor - outer_factor) * rotate_90(sampled_dir.xy);
-		constraint_matrix[1] = ((1.0f - random_numbers[1]) / (inner_factor * inner_factor)) * inner_dir;
-		constraint_matrix[1] += (random_numbers[1] / (outer_factor * outer_factor)) * outer_dir;
-		constraint_matrix = transpose(constraint_matrix);
-		vec3 sample_derivative;
-		sample_derivative.xy = (1.0f / determinant(constraint_matrix)) * vec2(constraint_matrix[1][1], -constraint_matrix[0][1]);
-		sample_derivative.z = -dot(sampled_dir.xy, sample_derivative.xy) / sampled_dir.z;
-		// Evaluate the forward error in radians
-		float forward_error = length(sample_derivative) * scaled_backward_error;
-		// Return both errors
-		return vec3(backward_error, scaled_backward_error, forward_error);
-	}
 }

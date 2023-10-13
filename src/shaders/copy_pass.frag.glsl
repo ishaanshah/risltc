@@ -18,6 +18,8 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "srgb_utility.glsl"
 
+#define _255 0.003921568627451f
+
 //! Color written to the swapchain image
 layout (location = 0) out vec4 g_out_color;
 
@@ -39,9 +41,9 @@ void main() {
 		uint shift = (g_frame_bits == 1) ? 0 : 8;
 		uvec2 half_bits = uvec2(packHalf2x16(g_out_color.rg), packHalf2x16(g_out_color.ba));
 		g_out_color = vec4(
-			((half_bits[0] & mask) >> shift) * (1.0f / 255.0f),
-			((((half_bits[0] & 0xFFFF0000) >> 16) & mask) >> shift) * (1.0f / 255.0f),
-			((half_bits[1] & mask) >> shift) * (1.0f / 255.0f),
+			((half_bits[0] & mask) >> shift) * (_255),
+			((((half_bits[0] & 0xFFFF0000) >> 16) & mask) >> shift) * (_255),
+			((half_bits[1] & mask) >> shift) * (_255),
 			1.0f
 		);
 		// We just want to write bits to the render target, not colors. If the

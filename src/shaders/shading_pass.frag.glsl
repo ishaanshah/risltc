@@ -24,8 +24,8 @@
 #include "noise_utility.glsl"
 #include "brdfs.glsl"
 #include "mesh_quantization.glsl"
-//#include "polygon_sampling.glsl" via polygon_sampling_related_work.glsl
-#include "polygon_sampling_related_work.glsl"
+
+#include "polygon_sampling.glsl"
 #include "polygon_clipping.glsl"
 #include "shared_constants.glsl"
 #include "srgb_utility.glsl"
@@ -64,22 +64,17 @@ layout(origin_upper_left) in vec4 gl_FragCoord;
 layout (location = 0) out vec4 g_out_color;
 
 
-/*! Turns an error value into a color that makes it easy to see the magnitude
-	of the error. The method uses the tab20b colormap of matplotlib, which
-	uses colors with five hues, each in four different levels of saturation.
-	Each of these five hues maps to one power of ten, ranging from 1.0e-7f to
-	1.0e-2f.*/
-vec3 error_to_color(float error) {
 	const float min_exponent = 0.0f;
 	const float max_exponent = 5.0f;
 	const float min_error = pow(10.0, min_exponent);
 	const float max_error = pow(10.0, max_exponent - 0.01f);
-	float color_count = 20.0f;
-	error = clamp(abs(g_error_factor * error), min_error, max_error);
-	// 0.0f for log10(error) == min_exponent
-	// color_count for log10(error) == max_exponent
-	float color_index = fma(log2(error), color_count / ((max_exponent - min_exponent) * log2(10.0)), color_count * -min_exponent / (max_exponent - min_exponent));
+	const float color_count = 20.0f;
+	
+	const float op1 = color_count / ((max_exponent - min_exponent) * log2(10.0));
+	const float op2 = color_count * -min_exponent / (max_exponent - min_exponent);
+	
 	// These colors have been converted from sRGB to linear Rec. 709
+	const 
 	vec3 tab20b_colors[] = {
 		vec3(0.04092, 0.04374, 0.19120),
 		vec3(0.08438, 0.08866, 0.36625),
@@ -102,6 +97,18 @@ vec3 error_to_color(float error) {
 		vec3(0.61721, 0.15293, 0.50888),
 		vec3(0.73046, 0.34191, 0.67244),
 	};
+
+/*! Turns an error value into a color that makes it easy to see the magnitude
+	of the error. The method uses the tab20b colormap of matplotlib, which
+	uses colors with five hues, each in four different levels of saturation.
+	Each of these five hues maps to one power of ten, ranging from 1.0e-7f to
+	1.0e-2f.*/
+vec3 error_to_color(float error) {
+	error = clamp(abs(g_error_factor * error), min_error, max_error);
+	// 0.0f for log10(error) == min_exponent
+	// color_count for log10(error) == max_exponent
+	float color_index = fma(log2(error), op1, op2);
+	
 	return tab20b_colors[int(color_index)];
 }
 
@@ -141,13 +148,6 @@ void get_polygon_visibility(inout bool visibility, vec3 sampled_dir, vec3 shadin
 vec3 get_polygon_radiance(vec3 sampled_dir, vec3 shading_position, polygonal_light_t polygonal_light) {
 	vec3 radiance = polygonal_light.surface_radiance;
 	return radiance;
-}
-
-
-float get_polygon_area(polygonal_light_t light) {
-	vec3 v1 = light.vertices_world_space[1] - light.vertices_world_space[0];
-	vec3 v2 = light.vertices_world_space[2] - light.vertices_world_space[0];
-	return length(cross_stable(v1, v2)) / 2;
 }
 
 /*! Determines the radiance received from the given direction due to the given
@@ -407,17 +407,6 @@ vec3 evaluate_polygonal_light_shading(
 ) {
 	vec3 result = vec3(0.0f);
 
-#if SAMPLE_POLYGON_AREA_TURK		// ReSTIR (Baseline)
-	RAY_TRACING_FOR_LOOP(i, SAMPLE_COUNT, SAMPLE_COUNT_CLAMPED,
-	 	if (!eval_only)
-			light_sample = sample_area_polygon_turk(polygonal_light.vertex_count, polygonal_light.vertices_world_space, get_noise_2(accessor));
-		vec3 diffuse_dir;
-		float density = get_area_sample_density(diffuse_dir, light_sample, shading_data.position, polygonal_light.plane.xyz, get_polygon_area(polygonal_light));
-		result += get_polygonal_light_mis_estimate(diffuse_dir, density, shading_data, polygonal_light, visibility);
-	)
-
-
-#elif SAMPLE_POLYGON_PROJECTED_SOLID_ANGLE || SAMPLE_POLYGON_LTC_CP
 	// If the shading point is on the wrong side of the polygon, we get a
 	// correct winding by flipping the orientation of the shading space
 	float side = dot(vec4(shading_data.position, 1.0f), polygonal_light.plane);
@@ -426,7 +415,6 @@ vec3 evaluate_polygonal_light_shading(
 		ltc.world_to_shading_space[i][1] = (side < 0.0f) ? -ltc.world_to_shading_space[i][1] : ltc.world_to_shading_space[i][1];
 	}
 
-#if SAMPLE_POLYGON_LTC_CP
 	// Diffuse shading
 	// Transform to shading space
 	vec3 vertices_shading_space[MAX_POLYGON_VERTEX_COUNT];
@@ -454,109 +442,8 @@ vec3 evaluate_polygonal_light_shading(
 
 	result += ggx;
 
-#elif SAMPLE_POLYGON_PROJECTED_SOLID_ANGLE
-	// Instruction cache misses are a concern. Thus, we strive to keep the code
-	// small by preparing the diffuse (i==0) and specular (i==1) sampling
-	// strategies in the same loop.
-	projected_solid_angle_polygon_t polygon_diffuse;
-	projected_solid_angle_polygon_t polygon_specular;
-	[[dont_unroll]]
-	for (uint i = 0; i != 2; ++i) {
-		// Local space is either shading space (for the diffuse technique) or
-		// cosine space (for the specular technique)
-		mat4x3 world_to_local_space = (i == 0) ? ltc.world_to_shading_space : ltc.shading_to_cosine_space * ltc.world_to_shading_space;
-		if (i > 0)
-			// We put this object in the wrong place at first to avoid move
-			// instructions
-			polygon_diffuse = polygon_specular;
-		// Transform to local space
-		vec3 vertices_local_space[MAX_POLYGON_VERTEX_COUNT];
-		[[unroll]]
-		for (uint j = 0; j != MAX_POLYGONAL_LIGHT_VERTEX_COUNT; ++j)
-			vertices_local_space[j] = world_to_local_space * vec4(polygonal_light.vertices_world_space[j], 1.0f);
-		// Clip
-		uint clipped_vertex_count = clip_polygon(polygonal_light.vertex_count, vertices_local_space);
-		if (clipped_vertex_count == 0 && i == 0)
-			// The polygon is completely below the horizon
-			return vec3(0.0f);
-		else if (clipped_vertex_count == 0) {
-			// The linearly transformed cosine is zero on the polygon
-			polygon_specular.projected_solid_angle = 0.0f;
-			break;
-		}
-		// Prepare sampling
-		polygon_specular = prepare_projected_solid_angle_polygon_sampling(clipped_vertex_count, vertices_local_space);
-	}
-	// Even when something remains after clipping, the projected solid angle
-	// may still underflow
-	if (polygon_diffuse.projected_solid_angle == 0.0f)
-		return vec3(0.0f);
-	// Compute the importance of the specular sampling technique using an
-	// LTC-based estimate of unshadowed shading
-	float specular_albedo = ltc.albedo;
-	float specular_weight = specular_albedo * polygon_specular.projected_solid_angle;
-
-	// Compute the importance of the diffuse sampling technique using the
-	// diffuse albedo and the projected solid angle. Zero albedo is forbidden
-	// because we need a non-zero weight for diffuse samples in parts where the
-	// LTC is zero but the specular BRDF is not. Thus, we clamp.
-	vec3 diffuse_albedo = max(shading_data.diffuse_albedo, vec3(0.01f));
-	vec3 diffuse_weight = diffuse_albedo * polygon_diffuse.projected_solid_angle;
-	uint technique_count = (polygon_specular.projected_solid_angle > 0.0f) ? 2 : 1;
-	float rcp_diffuse_projected_solid_angle = 1.0f / polygon_diffuse.projected_solid_angle;
-	float rcp_specular_projected_solid_angle = 1.0f / polygon_specular.projected_solid_angle;
-	vec3 specular_weight_rgb = vec3(specular_weight);
-	// For optimal MIS, constant factors in the diffuse and specular weight
-	// matter
-#if MIS_HEURISTIC_OPTIMAL
-	vec3 radiance_over_pi = polygonal_light.surface_radiance * M_INV_PI;
-	diffuse_weight *= radiance_over_pi;
-	specular_weight_rgb *= radiance_over_pi;
-#endif
-	// Take the requested number of samples with both techniques
-	RAY_TRACING_FOR_LOOP(i, SAMPLE_COUNT, SAMPLE_COUNT_CLAMPED,
-		// Take the samples
-		vec3 dir_shading_space_diffuse = sample_projected_solid_angle_polygon(polygon_diffuse, get_noise_2(accessor));
-		vec3 dir_shading_space_specular;
-		if (polygon_specular.projected_solid_angle > 0.0f) {
-			dir_shading_space_specular = sample_projected_solid_angle_polygon(polygon_specular, get_noise_2(accessor));
-			dir_shading_space_specular = normalize(ltc.cosine_to_shading_space * dir_shading_space_specular);
-		}
-		[[dont_unroll]]
-		for (uint j = 0; j != technique_count; ++j) {
-			vec3 dir_shading_space = (j == 0) ? dir_shading_space_diffuse : dir_shading_space_specular;
-			if (dir_shading_space.z <= 0.0f) continue;
-			// Compute the densities for the sample with respect to both
-			// sampling techniques (w.r.t. solid angle measure)
-			float diffuse_density = dir_shading_space.z * rcp_diffuse_projected_solid_angle;
-			float specular_density = evaluate_ltc_density(ltc, dir_shading_space, rcp_specular_projected_solid_angle);
-			// Evaluate radiance and BRDF and the integrand as a whole
-			bool curr_visibility = visibility;
-			vec3 integrand = dir_shading_space.z * get_polygon_radiance_brdf_product(curr_visibility, (transpose(ltc.world_to_shading_space) * dir_shading_space).xyz, shading_data, polygonal_light);
-			
-			// If we haven't asked for visibility test, then dont use it
-			integrand = curr_visibility || !visibility ? integrand : vec3(0.0f);
-			// Use the appropriate MIS heuristic to turn the sample into a
-			// splat and accummulate
-			if (j == 0 && polygon_specular.projected_solid_angle <= 0.0f)
-				// We only have one sampling technique, so no MIS is needed
-				result += integrand * (1.0f / diffuse_density);
-			else if (j == 0)
-				result += get_mis_estimate(integrand, diffuse_weight, diffuse_density, specular_weight_rgb, specular_density, g_mis_visibility_estimate);
-			else
-				result += get_mis_estimate(integrand, specular_weight_rgb, specular_density, diffuse_weight, diffuse_density, g_mis_visibility_estimate);
-		}
-	)
-
-#endif
-#endif
-
-#if SAMPLE_POLYGON_LTC_CP
 	// Don't divide by sample count for LTC as result is analytic
 	return result;
-#else
-	return result * (1.0f / SAMPLE_COUNT);
-#endif
 }
 
 
@@ -710,11 +597,9 @@ void main() {
 			bool visibility = true;
 			int light_idx = int(get_noise_1(noise_accessor) * POLYGONAL_LIGHT_COUNT);
 			chosen_light = g_polygonal_lights[light_idx];
-#if SAMPLE_POLYGON_LTC_CP
+
 			result = evaluate_polygonal_light_shading_peters(shading_data, ltc, chosen_light, noise_accessor) * POLYGONAL_LIGHT_COUNT;
-#else
-			result = evaluate_polygonal_light_shading(shading_data, ltc, chosen_light, light_sample, false, visibility, noise_accessor) * POLYGONAL_LIGHT_COUNT;
-#endif
+
 			result /= LIGHT_SAMPLES;
 			final_color += result * int(visibility);
 		}
@@ -737,23 +622,17 @@ void main() {
 			if (res.light_index >= 0) {
 				polygonal_light_t polygonal_light = g_polygonal_lights[res.light_index];
 				bool visibility = true;
-#if SAMPLE_POLYGON_LTC_CP
+
 				vec3 color = evaluate_polygonal_light_shading_peters(shading_data, ltc, polygonal_light, noise_accessor);
-#else
-				vec3 color = evaluate_polygonal_light_shading(shading_data, ltc, polygonal_light, res.light_sample, true, visibility, noise_accessor);
-#endif
+
 				float p_hat = res.sample_value;
 				float W = res.w_sum / (m * p_hat);	// (1 / p_optimal)
 
-#if SAMPLE_POLYGON_LTC_CP || SAMPLE_POLYGON_PROJECTED_SOLID_ANGLE
 				// Visibility is embedded in the call so make sure that we don't divide by 0
 				if (p_hat == 0.0)
 					W = 0.0;
-#endif
 
-#if !SAMPLE_POLYGON_PROJECTED_SOLID_ANGLE && !SAMPLE_POLYGON_LTC_CP
-				W = W * int(visibility);
-#endif
+
 				vec3 result = (color * W) / LIGHT_SAMPLES;
 				final_color += result;
 			}

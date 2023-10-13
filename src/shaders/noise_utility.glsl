@@ -14,6 +14,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define _4294967296 2.328306436538696e-10f
 
 //! This structure holds all information needed to retrieve a large number of
 //! noise values
@@ -68,7 +69,7 @@ uint rand_lcg(uint rng_state) {
 
 float get_noise_gen(inout uint seed) {
 	seed = rand_lcg(seed);
-	return seed * (1.0 / 4294967296.0);
+	return seed * _4294967296;
 }
 
 //! Returns a noise accessor providing access to the first available noise
