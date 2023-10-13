@@ -145,7 +145,7 @@ int create_vulkan_device(device_t* device, const char* application_internal_name
 		VK_KHR_RAY_QUERY_EXTENSION_NAME,
 	};
 	device->device_extension_count = COUNT_OF(base_device_extension_names);
-	#define sz_base_device_extension_names (device->device_extension_count)
+	const uint32_t sz_base_device_extension_names = device->device_extension_count;
 	uint32_t sz_ray_tracing_device_extension_names = 0;
 
 	if (device->ray_tracing_supported) {
