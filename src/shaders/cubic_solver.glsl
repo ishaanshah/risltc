@@ -40,7 +40,7 @@ bool solve_cubic(out vec3 out_roots, vec4 coeffs) {
 	float sqrt_abs_discriminant = sqrt(abs(discriminant));
 	// Compute coefficients of the depressed cubic (third is zero, fourth is
 	// one)
-	vec2 depressed = vec2(fma(-2.0f * coeffs[2], delta[0], delta[1]), delta[0]);
+	vec2 depressed = vec2(fma(-(coeffs[2] + coeffs[2]), delta[0], delta[1]), delta[0]);
 	// Three real roots
 	if (discriminant >= 0.0f) {
 		// Take the cubic root of a normalized complex number

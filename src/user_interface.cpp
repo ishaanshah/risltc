@@ -36,18 +36,18 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 	ImGui::Text("Controls [?]");
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip(
-			"LMB			Rotate camera\n"
-			"WASDRF, arrows	Move camera\n"
-			"IKJL			Rotate camera\n"
-			",.			FOV camera\n"
-			"Ctrl			Move slower\n"
-			"Shift			Move faster\n"
-			"F1				Toggle user interface\n"
-			"F2				Toggle v-sync\n"
-			"F3				Quick save (camera and lights)\n"
-			"F4				Quick load (camera and lights)\n"
-			"F5				Reload shaders\n"
-			"F10, F12	   Take screenshot"
+			"LMB            Rotate camera\n"
+			"WASDRF, arrows Move camera\n"
+			"IKJL           Rotate camera\n"
+			",.             FOV camera\n"
+			"Ctrl           Move slower\n"
+			"Shift          Move faster\n"
+			"F1             Toggle user interface\n"
+			"F2             Toggle v-sync\n"
+			"F3             Quick save (camera and lights)\n"
+			"F4             Quick load (camera and lights)\n"
+			"F5             Reload shaders\n"
+			"F10, F12       Take screenshot"
 		);
 	// Display the frame rate
 	ImGui::SameLine();

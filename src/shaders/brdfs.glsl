@@ -146,7 +146,7 @@ vec3 sample_ggx_visible_normal_distribution(vec3 outgoing_shading_space, vec2 ro
 	ellipse_to_hemi[1] = cross(ellipse_to_hemi[2], ellipse_to_hemi[0]);
 	// Use the random numbers to sample a unit disk uniformly
 	float radius = sqrt(random_numbers[0]);
-	float azimuth = (2.0f * M_PI) * random_numbers[1];
+	float azimuth = M_TWO_PI * random_numbers[1];
 	vec2 disk_sample = radius * vec2(cos(azimuth), sin(azimuth));
 	// Scale and offset along the y-axis to turn this into a uniform sample in
 	// the union of two halved ellipsoids
@@ -208,9 +208,9 @@ vec3 sample_ggx_reflected_direction(out float out_density, vec3 outgoing_shading
 	float micro_dot_out = dot(micro_normal, outgoing_shading_space);
 	out_density = get_ggx_visible_normal_density(outgoing_shading_space.z, micro_normal.z, micro_dot_out, roughness);
 	// Mirror the outgoing light direction
-	vec3 incoming = fma(vec3(2.0f * micro_dot_out), micro_normal, -outgoing_shading_space);
+	vec3 incoming = fma(vec3(micro_dot_out + micro_dot_out), micro_normal, -outgoing_shading_space);
 	// Adapt the density to the mirroring
-	out_density /= 4.0f * micro_dot_out;
+	out_density *= 0.25f * micro_dot_out;
 	return incoming;
 }
 

@@ -91,7 +91,7 @@ float fast_positive_atan(float y) {
 	rz = fma(ry, rz, 0.18014100193977356f);
 	rz = fma(ry, rz, -0.3302994966506958f);
 	ry = fma(ry, rz, 0.9998660087585449f);
-	rz = fma(-2.0f * ry, rx, M_HALF_PI);
+	rz = fma(-(ry + ry), rx, M_HALF_PI);
 	rz = (abs(y) > 1.0f) ? rz : 0.0f;
 	rx = fma(rx, ry, rz);
 	return (y < 0.0f) ? (M_PI - rx) : rx;
@@ -166,8 +166,8 @@ solid_angle_polygon_t prepare_solid_angle_polygon_sampling(uint vertex_count, ve
 		float dot_0_2_plus_1_2 = dot_0_2 + dot_1_2;
 		float one_plus_dot_0_1 = 1.0f + dot_0_1;
 		float tangent = simplex_volume / (one_plus_dot_0_1 + dot_0_2_plus_1_2);
-		float triangle_solid_angle = 2.0f * positive_atan(tangent);
-		polygon.solid_angle += triangle_solid_angle;
+		float half_triangle_solid_angle = positive_atan(tangent);
+		polygon.solid_angle += half_triangle_solid_angle + half_triangle_solid_angle;
 		polygon.fan_solid_angles[i] = polygon.solid_angle;
 		// Some intermediate results from above help us with sampling
 		polygon.triangle_parameters[i] = vec3(simplex_volume, dot_0_2_plus_1_2, one_plus_dot_0_1);
@@ -746,7 +746,7 @@ vec2 sample_sector_between_ellipses(vec2 random_numbers, float target_area, vec2
 			outer_rsqrt_det, det_dirs / (outer_rsqrt_det * dot(quad_dirs[0], outer_dir)));
 		// Construct a homogeneous quadratic whose solutions include the next
 		// step of the iteration
-		quadratic = outerProduct(inner_dir - outer_dir, rotate_90(current_dir)) - outerProduct((2.0f * error) * inner_dir, outer_dir);
+		quadratic = outerProduct(inner_dir - outer_dir, rotate_90(current_dir)) - outerProduct((error + error) * inner_dir, outer_dir);
 		current_dir = solve_homogeneous_quadratic(quadratic);
 	}
 #endif
@@ -789,7 +789,7 @@ vec3 sample_projected_solid_angle_polygon(projected_solid_angle_polygon_t polygo
 		}
 		// Sample a direction within the sector
 		float sqrt_det = sqrt(get_ellipse_det(outer_ellipse));
-		float angle = 2.0f * target_projected_solid_angle * sqrt_det;
+		float angle = (target_projected_solid_angle + target_projected_solid_angle) * sqrt_det;
 		sampled_dir.xy = (cos(angle) * sqrt_det) * dir_0 + sin(angle) * rotate_90(ellipse_transform(outer_ellipse, dir_0));
 		// Sample a squared radius uniformly within the ellipse
 		sampled_dir.xy *= sqrt(random_numbers[1] / get_ellipse_direction_factor_rsq(outer_ellipse, sampled_dir.xy));

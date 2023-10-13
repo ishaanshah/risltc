@@ -123,8 +123,7 @@ void get_polygon_visibility(inout bool visibility, vec3 sampled_dir, vec3 shadin
 			0xFF, shading_position, min_t, sampled_dir, max_t);
 		rayQueryProceedEXT(ray_query);
 		// Update the visibility
-		bool occluder_hit = (rayQueryGetIntersectionTypeEXT(ray_query, true) != gl_RayQueryCommittedIntersectionNoneEXT);
-		visibility = !occluder_hit;
+		visibility = rayQueryGetIntersectionTypeEXT(ray_query, true) == gl_RayQueryCommittedIntersectionNoneEXT;
 	}
 }
 
