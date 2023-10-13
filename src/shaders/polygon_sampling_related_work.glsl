@@ -57,8 +57,8 @@ vec3 sample_area_polygon_turk(uint vertex_count, vec3 vertices[MAX_POLYGON_VERTE
 float get_area_sample_density(out vec3 out_normalized_dir, vec3 light_sample, vec3 shading_position, vec3 light_normal, float light_area) {
 	out_normalized_dir = light_sample - shading_position;
 	float distance_squared = dot(out_normalized_dir, out_normalized_dir);
-	float normalization = inversesqrt(distance_squared);
-	out_normalized_dir *= normalization;
+	
+	out_normalized_dir *= inversesqrt(distance_squared);
 	float projected_area = abs(dot(light_normal, out_normalized_dir)) * light_area;
 	return distance_squared / projected_area;
 }

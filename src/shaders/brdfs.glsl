@@ -146,8 +146,9 @@ vec3 sample_ggx_visible_normal_distribution(vec3 outgoing_shading_space, vec2 ro
 	ellipse_to_hemi[1] = cross(ellipse_to_hemi[2], ellipse_to_hemi[0]);
 	// Use the random numbers to sample a unit disk uniformly
 	float radius = sqrt(random_numbers[0]);
-	float azimuth = M_TWO_PI * random_numbers[1];
-	vec2 disk_sample = radius * vec2(cos(azimuth), sin(azimuth));
+	//float azimuth = M_TWO_PI * random_numbers[1];
+	float cos_azimuth = random_numbers[1] + random_numbers[1] - 1.0f;
+	vec2 disk_sample = radius * vec2(cos_azimuth, sqrt(1.0f - cos_azimuth*cos_azimuth));
 	// Scale and offset along the y-axis to turn this into a uniform sample in
 	// the union of two halved ellipsoids
 	vec3 sample_ellipse_space;
