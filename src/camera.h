@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 //! Needed for keyboard and mouse input
 typedef struct GLFWwindow GLFWwindow;
 
@@ -62,4 +64,4 @@ void get_world_to_projection_space(float world_to_projection_space[4][4], const 
 	GLFW.
 	\param camera The camera that will be updated.
 	\param window The window whose input is used for controlling the camera.*/
-void control_camera(first_person_camera_t *camera, GLFWwindow *window, int *need_update);
+void control_camera(first_person_camera_t *camera, GLFWwindow *window, uint32_t *need_update);

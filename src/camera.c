@@ -84,7 +84,7 @@ void get_world_to_projection_space(float world_to_projection_space[4][4], const 
 
 #define keyPress(a) (glfwGetKey(window, (a)) == GLFW_PRESS)
 
-void control_camera(first_person_camera_t* camera, GLFWwindow* window, int *need_update) {
+void control_camera(first_person_camera_t* camera, GLFWwindow* window, uint32_t *need_update) {
 	// Implement camera rotation
 	static const float mouse_radians_per_pixel = 1.0f * M_PI_F / 1000.0f;
 	static const float kb_radians_per_pixel = 75.0f * M_PI_F / 1000.0f;
