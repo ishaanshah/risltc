@@ -14,6 +14,7 @@
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+#include "fs.h"
 #include "ltc_table.h"
 #include "math_utilities.h"
 #include "string_utilities.h"
@@ -34,7 +35,7 @@ int load_ltc_table(ltc_table_t* table, const device_t* device, const char* direc
 		sprintf(index_string, "%u", i);
 		const char* path_pieces[] = {directory, "/fit", index_string, ".dat"};
 		char* file_path = concatenate_strings(COUNT_OF(path_pieces), path_pieces);
-		FILE* file = fopen(file_path, "rb");
+		FILE* file = fopen_setvbuf(file_path, "rb");
 		if (!file) {
 			printf("Failed to open the linearly transformed cosine table at %s.\n", file_path);
 			destroy_buffers(&staging, device);

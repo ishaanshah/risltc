@@ -14,6 +14,7 @@
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+#include "fs.h"
 #include "vulkan_basics.h"
 #include "string_utilities.h"
 #include "math_utilities.h"
@@ -989,7 +990,7 @@ int compile_glsl_shader(shader_t* shader, const device_t* device, const shader_r
 	}
 	// Verify that the shader file exists by opening and closing it
 #ifndef NDEBUG
-	FILE* shader_file = fopen(request->shader_file_path, "r");
+	FILE* shader_file = fopen_setvbuf(request->shader_file_path, "r");
 	if (!shader_file) {
 		printf("The shader file at path %s does not exist or cannot be opened.\n", request->shader_file_path);
 		return 1;
@@ -1037,7 +1038,7 @@ int compile_glsl_shader(shader_t* shader, const device_t* device, const shader_r
 #endif
 	// Invoke the command line and see whether it produced an output file
 	system(command_line);
-	FILE* file = fopen(spirv_path, "rb");
+	FILE* file = fopen_setvbuf(spirv_path, "rb");
 	if (!file) {
 		printf("glslangValidator failed to compile the shader at path %s. The full command line is:\n%s\n", request->shader_file_path, command_line);
 		free(command_line);

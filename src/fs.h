@@ -20,3 +20,7 @@
 #include <sys/stat.h>
 #define mkdir(filename) mkdir(filename, 0755);
 #endif
+
+#include <stdio.h>
+
+extern FILE* fopen_setvbuf(const char *file_path, const char *mode);

@@ -117,9 +117,13 @@ float positive_atan(float tangent) {
 	spots. Credit to Fabian Giessen's blog, see:
 	https://fgiesen.wordpress.com/2012/08/15/linear-interpolation-past-present-and-future/
 	*/
+/*
 float mix_fma(float x, float y, float a) {
 	return fma(a, y, fma(-a, x, x));
 }
+*/
+
+#define mix_fma(x, y, a) fma((a), (y), fma(-(a), (x), (x)))
 
 
 /*! This structure carries intermediate results that only need to be computed

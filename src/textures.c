@@ -14,6 +14,7 @@
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+#include "fs.h"
 #include "textures.h"
 #include <string.h>
 #include <stdio.h>
@@ -101,7 +102,7 @@ int load_2d_textures(images_t* textures, const device_t* device, uint32_t textur
 	for (uint32_t i = 0; i != texture_count; ++i) {
 		texture_2d_header_t* header = &loading.headers[i];
 		// Open the file
-		FILE* file = loading.headers[i].file = fopen(file_paths[i], "rb");
+		FILE* file = loading.headers[i].file = fopen_setvbuf(file_paths[i], "rb");
 		if (!file) {
 			printf("Failed to open the texture file at path %s.\n", file_paths[i]);
 			destroy_texture_loading(&loading, device);

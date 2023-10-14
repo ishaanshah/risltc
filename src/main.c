@@ -24,6 +24,7 @@
 #include "fs.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -43,7 +44,7 @@ const char* const g_scene_paths[][4] = {
 /*! Writes the camera and lights of the given scene into its associated
 	quicksave file.*/
 void quick_save(scene_specification_t* scene) {
-	FILE* file = fopen(scene->quick_save_path, "wb");
+	FILE* file = fopen_setvbuf(scene->quick_save_path, "wb");
 	if (!file) {
 		printf("Quick save failed. Please check path and permissions: %s\n", scene->quick_save_path);
 		return;
@@ -76,7 +77,7 @@ void quick_save(scene_specification_t* scene) {
 	texturing of lights changes, booleans in the given updates structure (if
 	any) are set accordingly.*/
 void quick_load(scene_specification_t* scene, application_updates_t* updates) {
-	FILE* file = fopen(scene->quick_save_path, "rb");
+	FILE* file = fopen_setvbuf(scene->quick_save_path, "rb");
 	if (!file) {
 		printf("Failed to load a quick save. Please check path and permissions: %s\n", scene->quick_save_path);
 		return;
@@ -418,7 +419,7 @@ int create_and_assign_light_textures(images_t* light_textures, const device_t* d
 		else {
 			// Check if the file exists and resort to the default if it does
 			// not
-			FILE* file = fopen(new_path, "rb");
+			FILE* file = fopen_setvbuf(new_path, "rb");
 			if (file)
 				fclose(file);
 			else {
@@ -2661,7 +2662,7 @@ void setup_experiment(application_updates_t* updates, experiment_list_t* list, s
 
 	if (!list->experiment->ss_per_frame) {
 		// Open timings file
-		*timings = fopen(list->experiment->timings_path, "w");
+		*timings = fopen_setvbuf(list->experiment->timings_path, "w");
 	}
 
 	// Adjust the resolution as needed
@@ -3079,4 +3080,11 @@ int main(int argc, char** argv) {
 	// Clean up
 	destroy_application(&app);
 	return 0;
+}
+
+FILE* fopen_setvbuf(const char *file_path, const char *mode) {
+	FILE* file = fopen(file_path, mode);
+	if(file) setvbuf(file, NULL, _IOFBF, 64 * 1024);
+
+	return file;
 }

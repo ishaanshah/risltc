@@ -14,6 +14,7 @@
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+#include "fs.h"
 #include "scene.h"
 #include "textures.h"
 #include "string_utilities.h"
@@ -413,7 +414,7 @@ int load_scene(scene_t* scene, const device_t* device, const char* file_path, co
 	// Clear the output object
 	memset(scene, 0, sizeof(*scene));
 	// Open the source file
-	FILE* file = fopen(file_path, "rb");
+	FILE* file = fopen_setvbuf(file_path, "rb");
 	if (!file) {
 		printf("Failed to open the scene file at %s.\n", file_path);
 		destroy_scene(scene, device);
