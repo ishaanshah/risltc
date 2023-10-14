@@ -337,7 +337,7 @@ vec3 evaluate_polygonal_light_shading_peters(
 			// splat and accummulate
 			if (j == 0 && polygon_specular.projected_solid_angle <= 0.0f)
 				// We only have one sampling technique, so no MIS is needed
-				result += visibility ? (integrand * (1.0f / diffuse_density)) : vec3(0.0f);
+				result += visibility ? (integrand / diffuse_density) : vec3(0.0f);
 			else if (j == 0)
 				result += get_mis_estimate(integrand, diffuse_weight, diffuse_density, specular_weight_rgb, specular_density, g_mis_visibility_estimate);
 			else
@@ -421,9 +421,11 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 		normals[i] = decode_normal_32_bit(normal_and_tex_coords.xy);
 		tex_coords[i] = fma(normal_and_tex_coords.zw, vec2(8.0f, -8.0f), vec2(0.0f, 1.0f));
 	}
+
 	// Construct the view ray for the pixel at hand (the ray direction is not
 	// normalized)
 	vec3 ray_origin = g_camera_position_world_space;
+
 	// Perform ray triangle intersection to figure out barycentrics within the
 	// triangle
 	vec3 barycentrics;
@@ -431,6 +433,7 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 		positions[1] - positions[0],
 		positions[2] - positions[0]
 	};
+
 	vec3 ray_cross_edge_1 = cross(ray_direction, edges[1]);
 	float rcp_det_edges_direction = 1.0f / dot(edges[0], ray_cross_edge_1);
 	vec3 ray_to_0 = ray_origin - positions[0];
@@ -438,8 +441,10 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 	barycentrics.y = rcp_det_edges_direction * det_0_dir_edge_1;
 	vec3 edge_0_cross_0 = cross(edges[0], ray_to_0);
 	float det_dir_edge_0_0 = dot(ray_direction, edge_0_cross_0);
+
 	barycentrics.z = -rcp_det_edges_direction * det_dir_edge_0_0;
 	barycentrics.x = 1.0f - (barycentrics.y + barycentrics.z);
+
 	// Compute screen space derivatives for the barycentrics
 	vec3 barycentrics_derivs[2];
 	[[unroll]]
@@ -453,10 +458,12 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 		barycentrics_derivs[i].z = -rcp_det_edges_direction_deriv * det_dir_edge_0_0 - rcp_det_edges_direction * det_dir_edge_0_0_deriv;
 		barycentrics_derivs[i].x = -(barycentrics_derivs[i].y + barycentrics_derivs[i].z);
 	}
+
 	// Interpolate vertex attributes across the triangle
 	result.position = fma(vec3(barycentrics[0]), positions[0], fma(vec3(barycentrics[1]), positions[1], barycentrics[2] * positions[2]));
 	vec3 interpolated_normal = normalize(fma(vec3(barycentrics[0]), normals[0], fma(vec3(barycentrics[1]), normals[1], barycentrics[2] * normals[2])));
 	vec2 tex_coord = fma(vec2(barycentrics[0]), tex_coords[0], fma(vec2(barycentrics[1]), tex_coords[1], barycentrics[2] * tex_coords[2]));
+
 	// Compute screen space texture coordinate derivatives for filtering
 	vec2 tex_coord_derivs[2] = { vec2(0.0f), vec2(0.0f) };
 	[[unroll]]
@@ -464,14 +471,17 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 		[[unroll]]
 		for (uint j = 0; j != 3; ++j)
 			tex_coord_derivs[i] += barycentrics_derivs[i][j] * tex_coords[j];
+
 	// Read all three textures
-	uint material_index = texelFetch(g_material_indices, primitive_index).r;
-	vec3 base_color = textureGrad(g_material_textures[nonuniformEXT(3 * material_index + 0)], tex_coord, tex_coord_derivs[0], tex_coord_derivs[1]).rgb;
-	vec3 specular_data = textureGrad(g_material_textures[nonuniformEXT(3 * material_index + 1)], tex_coord, tex_coord_derivs[0], tex_coord_derivs[1]).rgb;
+	uint material_index3 = 3 * texelFetch(g_material_indices, primitive_index).r;
+	vec3 base_color = textureGrad(g_material_textures[nonuniformEXT(material_index3)], tex_coord, tex_coord_derivs[0], tex_coord_derivs[1]).rgb;
+	vec3 specular_data = textureGrad(g_material_textures[nonuniformEXT(material_index3 + 1)], tex_coord, tex_coord_derivs[0], tex_coord_derivs[1]).rgb;
+
 	vec3 normal_tangent_space;
-	normal_tangent_space.xy = textureGrad(g_material_textures[nonuniformEXT(3 * material_index + 2)], tex_coord, tex_coord_derivs[0], tex_coord_derivs[1]).rg;
+	normal_tangent_space.xy = textureGrad(g_material_textures[nonuniformEXT(material_index3 + 2)], tex_coord, tex_coord_derivs[0], tex_coord_derivs[1]).rg;
 	normal_tangent_space.xy = fma(normal_tangent_space.xy, vec2(2.0f), vec2(-1.0f));
 	normal_tangent_space.z = sqrt(max(0.0f, fma(-normal_tangent_space.x, normal_tangent_space.x, fma(-normal_tangent_space.y, normal_tangent_space.y, 1.0f))));
+
 	// Prepare BRDF parameters (i.e. immitate Falcor to be compatible with its
 	// assets, which in turn immitates the Unreal engine). The Fresnel F0 value
 	// for surfaces with zero metalicity is set to 0.02, not 0.04 as in Falcor
@@ -483,6 +493,7 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 	float linear_roughness = specular_data.g;
 	result.roughness = linear_roughness * linear_roughness;
 	result.roughness = clamp(result.roughness * g_roughness_factor, 0.0064f, 1.0f);
+
 	// Transform the normal vector to world space
 	vec2 tex_coord_edges[2] = {
 		tex_coords[1] - tex_coords[0],
@@ -492,10 +503,14 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 	vec3 edge1_cross_normal = cross(edges[1], interpolated_normal);
 	vec3 tangent = edge1_cross_normal * tex_coord_edges[0].x + normal_cross_edge_0 * tex_coord_edges[1].x;
 	vec3 bitangent = edge1_cross_normal * tex_coord_edges[0].y + normal_cross_edge_0 * tex_coord_edges[1].y;
+
 	float mean_tangent_length = sqrt(0.5f * (dot(tangent, tangent) + dot(bitangent, bitangent)));
+
 	mat3 tangent_to_world_space = mat3(tangent, bitangent, interpolated_normal);
+
 	normal_tangent_space.z *= max(1.0e-10f, mean_tangent_length);
 	result.normal = normalize(tangent_to_world_space * normal_tangent_space);
+
 	// Perform local shading normal adaptation to avoid that the view direction
 	// is below the horizon. Inspired by Keller et al., Section A.3, but
 	// different since the method of Keller et al. often led to normal vectors
@@ -503,9 +518,12 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 	// hemisphere of the outgoing direction.
 	// https://arxiv.org/abs/1705.01263
 	result.outgoing = normalize(g_camera_position_world_space - result.position);
+
 	float normal_offset = max(0.0f, 1.0e-3f - dot(result.normal, result.outgoing));
+
 	result.normal = fma(vec3(normal_offset), result.outgoing, result.normal);
 	result.normal = normalize(result.normal);
+
 	result.lambert_outgoing = dot(result.normal, result.outgoing);
 	return result;
 }
