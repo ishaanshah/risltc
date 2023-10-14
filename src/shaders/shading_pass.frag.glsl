@@ -236,6 +236,8 @@ vec3 get_polygonal_light_mis_estimate(vec3 sampled_dir, float sampled_density, s
 	return (sampled_density > 0.0f) ? (radiance_times_brdf * (lambert / sampled_density)) : vec3(0.0f);
 }
 
+float _SAMPLE_COUNT = (1.0f / SAMPLE_COUNT);
+
 /*! Takes samples from the given polygonal light to compute shading. The number
 	of samples and sampling techniques are determined by defines.
 	\return The color that arose from shading.*/
@@ -343,7 +345,7 @@ vec3 evaluate_polygonal_light_shading_peters(
 		}
 	)
 
-	return result * (1.0f / SAMPLE_COUNT);
+	return result * _SAMPLE_COUNT;
 }
 
 
@@ -541,9 +543,11 @@ void main() {
 		// For non LTC method this stores the sampled direction (will only work for 1 spp)
 		vec3 light_sample = vec3(0);
 
+		float _LIGHT_SAMPLES = 1.0f / LIGHT_SAMPLES;
+
 #if SAMPLE_LIGHT_UNIFORM
 		vec3 result = vec3(0);
-		polygonal_light_t chosen_light; 
+		polygonal_light_t chosen_light;
 		for (int i = 0; i < LIGHT_SAMPLES; i++) {
 			bool visibility = true;
 			int light_idx = int(get_noise_1(noise_accessor) * POLYGONAL_LIGHT_COUNT);
@@ -551,10 +555,11 @@ void main() {
 
 			result = evaluate_polygonal_light_shading_peters(shading_data, ltc, chosen_light, noise_accessor) * POLYGONAL_LIGHT_COUNT;
 
-			result /= LIGHT_SAMPLES;
+			result *= _LIGHT_SAMPLES;
 			final_color += result * int(visibility);
 		}
 #else
+		#define _p float(POLYGONAL_LIGHT_COUNT)
 		for (int j = 0; j < LIGHT_SAMPLES; j++) {
 			reservoir_t res;
 			initialize_reservoir(res);
@@ -565,8 +570,7 @@ void main() {
 				int light_idx = int(get_noise_1(noise_accessor) * POLYGONAL_LIGHT_COUNT);
 				vec3 color = evaluate_polygonal_light_shading(shading_data, ltc, g_polygonal_lights[light_idx], light_sample, false, dummy_vis, noise_accessor);
 				float p_hat = length(color);
-				float p = 1.f / float(POLYGONAL_LIGHT_COUNT);
-				float w = p_hat / p;
+				float w = p_hat * _p;
 				insert_in_reservoir(res, w, light_idx, light_sample, p_hat, get_noise_1(noise_accessor));
 			}
 			
@@ -584,7 +588,7 @@ void main() {
 					W = 0.0;
 
 
-				vec3 result = (color * W) / LIGHT_SAMPLES;
+				vec3 result = (color * W) * _LIGHT_SAMPLES;
 				final_color += result;
 			}
 		}
