@@ -230,8 +230,6 @@ void specify_default_render_settings(render_settings_t* settings) {
 	settings->mis_visibility_estimate = 0.5f;
 	settings->polygon_sampling_technique = sample_polygon_ltc_cp;
 	settings->light_sampling = light_reservoir;
-	settings->error_display = error_display_none;
-	settings->error_min_exponent = -7.0f;
 	settings->accum = VK_TRUE;
 	settings->show_polygonal_lights = VK_FALSE;
 	settings->animate_noise = VK_TRUE;
@@ -928,11 +926,13 @@ int create_shading_pass(shading_pass_t* pass, application_t* app)
 	complete_descriptor_set_write(binding_count, descriptor_set_writes, &set_request);
 	light_buffer_info.buffer = lights->buffer;
 	light_buffer_info.range = lights->size;
+
+	const uint32_t sz_descriptor_set_writes = COUNT_OF(descriptor_set_writes);
 	for (uint32_t i = 0; i != swapchain->image_count; ++i) {
 		constant_buffer_info.buffer = constant_buffers->buffers.buffers[i].buffer;
 		constant_buffer_info.range = constant_buffers->buffers.buffers[i].size;
 		visibility_buffer_info.imageView = render_targets->targets[i].visibility_buffer.view;
-		for (uint32_t j = 0; j != COUNT_OF(descriptor_set_writes); ++j)
+		for (uint32_t j = 0; j != sz_descriptor_set_writes; ++j)
 			descriptor_set_writes[j].dstSet = pipeline->descriptor_sets[i];
 		vkUpdateDescriptorSets(device->device, binding_count, descriptor_set_writes, 0, NULL);
 	}
@@ -942,29 +942,10 @@ int create_shading_pass(shading_pass_t* pass, application_t* app)
 	// Prepare defines for the shader
 	mis_heuristic_t mis_heuristic = app->render_settings.mis_heuristic;
 	sample_polygon_technique_t polygon_technique = app->render_settings.polygon_sampling_technique;
-	error_display_t error_display = app->render_settings.error_display;
 	uint32_t min_polygonal_light_vertex_count = get_min_polygonal_light_vertex_count(&app->scene_specification);
 	uint32_t max_polygonal_light_vertex_count = get_max_polygonal_light_vertex_count(&app->scene_specification);
 	uint32_t max_polygon_vertex_count = get_max_polygon_vertex_count(&app->scene_specification, &app->render_settings);
-	uint32_t error_index = 0;
-	VkBool32 error_display_diffuse = VK_FALSE;
-	VkBool32 error_display_specular = VK_FALSE;
-	switch (error_display) {
-	case error_display_diffuse_backward:
-		error_display_diffuse = VK_TRUE;  error_index = 0;  break;
-	case error_display_specular_backward:
-		error_display_specular = VK_TRUE;  error_index = 0;  break;
-	case error_display_diffuse_backward_scaled:
-		error_display_diffuse = VK_TRUE;  error_index = 1;  break;
-	case error_display_specular_backward_scaled:
-		error_display_specular = VK_TRUE;  error_index = 1;  break;
-	case error_display_diffuse_forward:
-		error_display_diffuse = VK_TRUE;  error_index = 2;  break;
-	case error_display_specular_forward:
-		error_display_specular = VK_TRUE;  error_index = 2;  break;
-	default:
-		break;
-	};
+
 	char* defines[] = {
 		format_uint("MATERIAL_COUNT=%u", (uint32_t) scene->materials.material_count),
 		format_uint("POLYGONAL_LIGHT_COUNT=%u", app->scene_specification.polygonal_light_count),
@@ -991,9 +972,6 @@ int create_shading_pass(shading_pass_t* pass, application_t* app)
 		//format_uint("SAMPLE_POLYGON_LTC_CP=%u", polygon_technique == sample_polygon_ltc_cp),
 		copy_string((polygon_technique == sample_polygon_projected_solid_angle_biased) ? "USE_BIASED_PROJECTED_SOLID_ANGLE_SAMPLING" : "DONT_USE_BIASED_PROJECTED_SOLID_ANGLE_SAMPLING"),
 		format_uint("USE_FAST_ATAN=%u", app->render_settings.fast_atan),
-		format_uint("ERROR_DISPLAY_DIFFUSE=%u", error_display_diffuse),
-		format_uint("ERROR_DISPLAY_SPECULAR=%u", error_display_specular),
-		format_uint("ERROR_INDEX=%u", error_index),
 	};
 
 	const uint32_t sz_defines = COUNT_OF(defines);
@@ -1172,12 +1150,14 @@ int create_accum_pass(accum_pass_t * pass, application_t* app)
 		{ .dstBinding = 1, .pImageInfo = &accum_buffer_info },
 	};
 	complete_descriptor_set_write(binding_count, descriptor_set_writes, &set_request);
+
+	const uint32_t sz_descriptor_set_writes = COUNT_OF(descriptor_set_writes);
 	for (uint32_t i = 0; i != image_count; ++i) {
 		uint32_t prev_swapchain_id = (((int32_t)i - 1) + image_count) % image_count;
 		// Attach the previous framebuffer
 		accum_buffer_info.imageView = render_targets->targets[prev_swapchain_id].accum_buffer.view;
 		shading_buffer_info.imageView = render_targets->targets[i].shading_buffer.view;
-		for (uint32_t j = 0; j != COUNT_OF(descriptor_set_writes); ++j)
+		for (uint32_t j = 0; j != sz_descriptor_set_writes; ++j)
 			descriptor_set_writes[j].dstSet = pipeline->descriptor_sets[i];
 		vkUpdateDescriptorSets(device->device, binding_count, descriptor_set_writes, 0, NULL);
 	}
@@ -1349,9 +1329,11 @@ int create_copy_pass(copy_pass_t * pass, application_t* app) {
 		{ .dstBinding = 0, .pImageInfo = &accum_buffer_info },
 	};
 	complete_descriptor_set_write(binding_count, descriptor_set_writes, &set_request);
+
+	const uint32_t sz_descriptor_set_writes = COUNT_OF(descriptor_set_writes);
 	for (uint32_t i = 0; i != image_count; ++i) {
 		accum_buffer_info.imageView = render_targets->targets[i].accum_buffer.view;
-		for (uint32_t j = 0; j != COUNT_OF(descriptor_set_writes); ++j)
+		for (uint32_t j = 0; j != sz_descriptor_set_writes; ++j)
 			descriptor_set_writes[j].dstSet = pipeline->descriptor_sets[i];
 		vkUpdateDescriptorSets(device->device, binding_count, descriptor_set_writes, 0, NULL);
 	}
@@ -1581,11 +1563,11 @@ int create_interface_pass(interface_pass_t* pass, const device_t* device, imgui_
 	{
 		printf("Failed to compile shaders for the GUI rendering.\n");
 		destroy_interface_pass(pass, device);
-		for (uint32_t i = 0; i != COUNT_OF(gui_defines); ++i)
+		for (uint32_t i = 0; i != sz_gui_defines; ++i)
 			free(gui_defines[i]);
 		return 1;
 	}
-	for (uint32_t i = 0; i != COUNT_OF(gui_defines); ++i)
+	for (uint32_t i = 0; i != sz_gui_defines; ++i)
 		free(gui_defines[i]);
 	// Create a sampler for the font texture of imgui
 	VkSamplerCreateInfo gui_sampler_info = {
@@ -2926,7 +2908,6 @@ void write_constants(void* data, application_t* app) {
 		.viewport_size = app->swapchain.extent,
 		.cursor_position = { (int32_t) cursor_position[0], (int32_t) cursor_position[1] },
 		.ltc_constants = app->ltc_table.constants,
-		.error_factor = powf(10.0f, -app->render_settings.error_min_exponent),
 		.exposure_factor = app->render_settings.exposure_factor,
 		.roughness_factor = app->render_settings.roughness_factor,
 	};

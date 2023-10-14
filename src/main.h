@@ -83,35 +83,6 @@ typedef enum light_sampling_strategies_e {
 	light_reservoir
 } light_sampling_strategies_t;
 
-//! Settings for how the error of projected solid angle sampling should be
-//! visualized
-typedef enum error_display_e {
-	//! The scene is rendered, no errors are displayed
-	error_display_none,
-	//! The error of the first sample using the diffuse sampling strategy is
-	//! displayed as error in the first random number
-	error_display_diffuse_backward,
-	//! The error of the first sample using the diffuse sampling strategy is
-	//! displayed as error in the first random number, multiplied by the
-	//! projected solid angle of the polygon
-	error_display_diffuse_backward_scaled,
-	//! The error of the first sample using the diffuse sampling strategy is
-	//! displayed as error in the sampled direction in radians
-	error_display_diffuse_forward,
-	//! The error of the first sample using the specular sampling strategy is
-	//! displayed as error in the first random number
-	error_display_specular_backward,
-	//! The error of the first sample using the specular sampling strategy is
-	//! displayed as error in the first random number, multiplied by the
-	//! projected solid angle of the polygon
-	error_display_specular_backward_scaled,
-	//! The error of the first sample using the specular sampling strategy is
-	//! displayed as error in the sampled direction in radians
-	error_display_specular_forward,
-	//! Number of available settings
-	error_display_count
-} error_display_t;
-
 //! Either defines a boolean value or leaves it undefined
 typedef enum bool_override_e {
 	bool_override_false = 0,
@@ -136,11 +107,6 @@ typedef struct render_settings_s {
 	float mis_visibility_estimate;
 	//! The technique used to sample polygonal lights
 	sample_polygon_technique_t polygon_sampling_technique;
-	//! Whether the error of the diffuse or specular sampling strategy should
-	//! be visualized
-	error_display_t error_display;
-	//! An error of pow(10.0f, error_min_exponent) is displayed as dark blue
-	float error_min_exponent;
 	//! Whether noise should be updated each frame
 	VkBool32 animate_noise;
 	//! Whether to accumulate frames
@@ -536,7 +502,7 @@ typedef struct application_s {
 	\see shared_constants.glsl */
 typedef struct per_frame_constants_s {
 	float mesh_dequantization_factor[3], padding_0, mesh_dequantization_summand[3];
-	float error_factor;
+	float padding_1;
 	float world_to_projection_space[4][4];
 	float pixel_to_ray_direction_world_space[3][4];
 	float camera_position_world_space[3];

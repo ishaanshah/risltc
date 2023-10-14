@@ -21,8 +21,9 @@
 layout (std140, row_major, binding = 0) uniform per_frame_constants {
 	//! Bounding-box dependent constants needed for dequantization of positions
 	vec3 g_mesh_dequantization_factor, g_mesh_dequantization_summand;
-	//! The reciprocal of the minimal error that maps to a distinct color
-	float g_error_factor;
+
+	float padding_1;
+
 	//! The transform from world space to projection space
 	mat4 g_world_to_projection_space;
 	//! Turns a column vector (pixel.x, pixel.y, 1.0f) with integer screen

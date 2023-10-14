@@ -64,55 +64,6 @@ layout(origin_upper_left) in vec4 gl_FragCoord;
 layout (location = 0) out vec4 g_out_color;
 
 
-	const float min_exponent = 0.0f;
-	const float max_exponent = 5.0f;
-	const float min_error = pow(10.0, min_exponent);
-	const float max_error = pow(10.0, max_exponent - 0.01f);
-	const float color_count = 20.0f;
-	
-	const float op1 = color_count / ((max_exponent - min_exponent) * log2(10.0));
-	const float op2 = color_count * -min_exponent / (max_exponent - min_exponent);
-	
-	// These colors have been converted from sRGB to linear Rec. 709
-	const 
-	vec3 tab20b_colors[] = {
-		vec3(0.04092, 0.04374, 0.19120),
-		vec3(0.08438, 0.08866, 0.36625),
-		vec3(0.14703, 0.15593, 0.62396),
-		vec3(0.33245, 0.34191, 0.73046),
-		vec3(0.12477, 0.19120, 0.04092),
-		vec3(0.26225, 0.36131, 0.08438),
-		vec3(0.46208, 0.62396, 0.14703),
-		vec3(0.61721, 0.70838, 0.33245),
-		vec3(0.26225, 0.15293, 0.03071),
-		vec3(0.50888, 0.34191, 0.04092),
-		vec3(0.79910, 0.49102, 0.08438),
-		vec3(0.79910, 0.59720, 0.29614),
-		vec3(0.23074, 0.04519, 0.04092),
-		vec3(0.41789, 0.06663, 0.06848),
-		vec3(0.67244, 0.11954, 0.14703),
-		vec3(0.79910, 0.30499, 0.33245),
-		vec3(0.19807, 0.05286, 0.17144),
-		vec3(0.37626, 0.08228, 0.29614),
-		vec3(0.61721, 0.15293, 0.50888),
-		vec3(0.73046, 0.34191, 0.67244),
-	};
-
-/*! Turns an error value into a color that makes it easy to see the magnitude
-	of the error. The method uses the tab20b colormap of matplotlib, which
-	uses colors with five hues, each in four different levels of saturation.
-	Each of these five hues maps to one power of ten, ranging from 1.0e-7f to
-	1.0e-2f.*/
-vec3 error_to_color(float error) {
-	error = clamp(abs(g_error_factor * error), min_error, max_error);
-	// 0.0f for log10(error) == min_exponent
-	// color_count for log10(error) == max_exponent
-	float color_index = fma(log2(error), op1, op2);
-	
-	return tab20b_colors[int(color_index)];
-}
-
-
 /*! If shadow rays are enabled, this function traces a shadow ray towards the
 	given polygonal light and updates visibility accordingly. If visibility is
 	false already, no ray is traced. The ray direction must be normalized.*/

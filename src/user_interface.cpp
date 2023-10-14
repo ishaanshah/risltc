@@ -139,8 +139,8 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 		updates->change_shading = VK_TRUE;
 	}
 	// Various rendering settings
-	if (settings->error_display == error_display_none)
-		if(ImGui::DragFloat("Exposure", &settings->exposure_factor, 0.05f, 0.0f, 200.0f, "%.2f")) *reset_accum = 1;
+	if(ImGui::DragFloat("Exposure", &settings->exposure_factor, 0.05f, 0.0f, 200.0f, "%.2f")) *reset_accum = 1;
+
 	if(ImGui::DragFloat("Roughness factor", &settings->roughness_factor, 0.01f, 0.0f, 2.0f, "%.2f")) *reset_accum = 1;
 
 	// Show buttons for quick save and quick load
