@@ -471,12 +471,12 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 	// for surfaces with zero metalicity is set to 0.02, not 0.04 as in Falcor
 	// because this way colors throughout the scenes are a little less
 	// desaturated.
-	float metalicity = specular_data.b;
+	#define metalicity (specular_data.b)
 	result.diffuse_albedo = fma(base_color, -vec3(metalicity), base_color);
 	result.fresnel_0 = mix(vec3(0.02f), base_color, metalicity);
-	float linear_roughness = specular_data.g;
-	result.roughness = linear_roughness * linear_roughness;
-	result.roughness = clamp(result.roughness * g_roughness_factor, 0.0064f, 1.0f);
+	
+	#define linear_roughness (specular_data.g)
+	result.roughness = clamp(linear_roughness * linear_roughness * g_roughness_factor, 0.0064f, 1.0f);
 
 	// Transform the normal vector to world space
 	vec2 tex_coord_edges[2] = {
