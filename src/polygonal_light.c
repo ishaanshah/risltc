@@ -77,13 +77,17 @@ void update_polygonal_light(polygonal_light_t* light) {
 	light->plane[3] = -(rotation[0][2] * light->translation[0] + rotation[1][2] * light->translation[1] + rotation[2][2] * light->translation[2]);
 	// Triangulate the polygon as triangle fan and compute individual areas
 	float signed_area = 0.0f;
+	uint32_t i24 = 2 << 2;
+	uint32_t i14 = 1 << 2;
 	for (uint32_t i = 0; i != light->vertex_count - 2; ++i) {
 		float matrix[2][2] = {
-			{light->vertices_plane_space[(i + 2) * 4 + 0] - light->vertices_plane_space[0], light->vertices_plane_space[(i + 1) * 4 + 0] - light->vertices_plane_space[0]},
-			{light->vertices_plane_space[(i + 2) * 4 + 1] - light->vertices_plane_space[1], light->vertices_plane_space[(i + 1) * 4 + 1] - light->vertices_plane_space[1]},
+			{light->vertices_plane_space[i24] - light->vertices_plane_space[0], light->vertices_plane_space[i14] - light->vertices_plane_space[0]},
+			{light->vertices_plane_space[i24 + 1] - light->vertices_plane_space[1], light->vertices_plane_space[i14 + 1] - light->vertices_plane_space[1]},
 		};
 		float triangle_area = 0.5f * (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]);
 		signed_area += triangle_area;
+		i14 += 4;
+		i24 += 4;
 	}
 	signed_area *= scalings[0] * scalings[1];
 	float abs_area = (signed_area < 0.0f) ? -signed_area : signed_area;

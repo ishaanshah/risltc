@@ -80,7 +80,8 @@ int load_ltc_table(ltc_table_t* table, const device_t* device, const char* direc
 			return 1;
 		}
 		// Load one matrix after the other and quantize
-		for (uint32_t j = 0; j != resolution * resolution; ++j) {
+		const uint32_t resolution2 = resolution * resolution;
+		for (uint32_t j = 0; j != resolution2; ++j) {
 			float data[5];
 			fread((char*)data, sizeof(float), 5, file);
 			// Invert the matrix (disregarding a constant factor)

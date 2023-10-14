@@ -2069,7 +2069,7 @@ int record_render_frame_commands(VkCommandBuffer cmd, application_t* app, uint32
 	vkCmdDraw(cmd, 3, 1, 0, 0);
 	// Run the interface pass
 	vkCmdNextSubpass(cmd, VK_SUBPASS_CONTENTS_INLINE);
-	if (app->render_settings.show_gui && !app->screenshot.path_hdr) {
+	if (app->render_settings.show_gui && !app->screenshot.path_hdr && !app->screenshot.path_png && !app->screenshot.path_jpg) {
 		if (render_gui(cmd, app, swapchain_index)) {
 			printf("Failed to render the user interface.\n");
 			return 1;
@@ -2078,7 +2078,7 @@ int record_render_frame_commands(VkCommandBuffer cmd, application_t* app, uint32
 	// The frame is rendered completely
 	vkCmdEndRenderPass(cmd);
 	// Record end timestamp
-	vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, app->query_pool.pool, swapchain_index*2+1);
+	vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, app->query_pool.pool, swapchain_index + swapchain_index + 1);
 	// Finish recording
 	if (vkEndCommandBuffer(cmd)) {
 		printf("Failed to end using a command buffer for rendering the scene.\n");
@@ -2300,12 +2300,12 @@ int grab_screenshot_ldr(screenshot_t* screenshot, const swapchain_t* swapchain, 
 	if (screenshot->frame_bits == frame_bits_hdr_high)
 		ldr_copy += 3 * extent.width * extent.height;
 	int stride = extent.width * 3 * sizeof(uint8_t);
+
 	if (!source_10_bit_hdr) {
-		VkDeviceSize source_index0 = 0;
-		VkDeviceSize source_index4 = 0;
 		VkDeviceSize index3 = 0;
+		VkDeviceSize source_index = 0;
+		VkDeviceSize source_index4 = 0;
 		for (uint32_t y = 0; y != extent.height; ++y) {
-			source_index4 = source_index0 << 2;
 			for (uint32_t x = 0; x != extent.width; ++x) {
 				ldr_copy[index3 + channel_permutation[0]] = staging_data[source_index4];
 				ldr_copy[index3 + channel_permutation[1]] = staging_data[source_index4 + 1];
@@ -2313,15 +2313,15 @@ int grab_screenshot_ldr(screenshot_t* screenshot, const swapchain_t* swapchain, 
 				index3 += 3;
 				source_index4 += 4;
 			}
-			source_index0 += pixel_row_pitch;
+			source_index += pixel_row_pitch;
+			source_index4 = source_index << 2;
 		}
 	}
 	else {
+		VkDeviceSize index3 = 0;
 		VkDeviceSize source_index0 = 0;
 		VkDeviceSize source_index = 0;
-		VkDeviceSize index3 = 0;
 		for (uint32_t y = 0; y != extent.height; ++y) {
-			source_index = source_index0;
 			for (uint32_t x = 0; x != extent.width; ++x) {
 				uint32_t pixel = ((uint32_t*) staging_data)[source_index];
 				uint32_t red = (pixel & 0x3FF) >> 2;
@@ -2333,8 +2333,11 @@ int grab_screenshot_ldr(screenshot_t* screenshot, const swapchain_t* swapchain, 
 				index3 += 3;
 				source_index++;
 			}
+			source_index0 += pixel_row_pitch;
+			source_index = source_index0;
 		}
 	}
+
 	vkUnmapMemory(device->device, screenshot->staging.memories[0]);
 	return 0;
 }
