@@ -2300,28 +2300,37 @@ int grab_screenshot_ldr(screenshot_t* screenshot, const swapchain_t* swapchain, 
 		ldr_copy += 3 * extent.width * extent.height;
 	int stride = extent.width * 3 * sizeof(uint8_t);
 	if (!source_10_bit_hdr) {
+		VkDeviceSize source_index0 = 0;
+		VkDeviceSize source_index4 = 0;
+		VkDeviceSize index3 = 0;
 		for (uint32_t y = 0; y != extent.height; ++y) {
+			source_index4 = source_index0 << 2;
 			for (uint32_t x = 0; x != extent.width; ++x) {
-				VkDeviceSize source_index = y * pixel_row_pitch + x;
-				VkDeviceSize index = y * extent.width + x;
-				ldr_copy[index * 3 + channel_permutation[0]] = staging_data[source_index * 4 + 0];
-				ldr_copy[index * 3 + channel_permutation[1]] = staging_data[source_index * 4 + 1];
-				ldr_copy[index * 3 + channel_permutation[2]] = staging_data[source_index * 4 + 2];
+				ldr_copy[index3 + channel_permutation[0]] = staging_data[source_index4];
+				ldr_copy[index3 + channel_permutation[1]] = staging_data[source_index4 + 1];
+				ldr_copy[index3 + channel_permutation[2]] = staging_data[source_index4 + 2];
+				index3 += 3;
+				source_index4 += 4;
 			}
+			source_index0 += pixel_row_pitch;
 		}
 	}
 	else {
+		VkDeviceSize source_index0 = 0;
+		VkDeviceSize source_index = 0;
+		VkDeviceSize index3 = 0;
 		for (uint32_t y = 0; y != extent.height; ++y) {
+			source_index = source_index0;
 			for (uint32_t x = 0; x != extent.width; ++x) {
-				VkDeviceSize source_index = y * pixel_row_pitch + x;
-				VkDeviceSize index = y * extent.width + x;
 				uint32_t pixel = ((uint32_t*) staging_data)[source_index];
 				uint32_t red = (pixel & 0x3FF) >> 2;
 				uint32_t green = (pixel & 0xFFC00) >> 12;
 				uint32_t blue = (pixel & 0x3FF00000) >> 22;
-				ldr_copy[index * 3 + channel_permutation[0]] = (uint8_t) red;
-				ldr_copy[index * 3 + channel_permutation[1]] = (uint8_t) green;
-				ldr_copy[index * 3 + channel_permutation[2]] = (uint8_t) blue;
+				ldr_copy[index3 + channel_permutation[0]] = (uint8_t) red;
+				ldr_copy[index3 + channel_permutation[1]] = (uint8_t) green;
+				ldr_copy[index3 + channel_permutation[2]] = (uint8_t) blue;
+				index3 += 3;
+				source_index++;
 			}
 		}
 	}

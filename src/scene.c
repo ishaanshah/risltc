@@ -172,10 +172,13 @@ int create_acceleration_structure(acceleration_structure_t* structure, const dev
 		destroy_acceleration_structure(structure, device);
 		return 1;
 	}
+
+	const uint32_t triangle_count3 = (uint32_t) mesh->triangle_count * 3;
+
 	// Dequantize the mesh data
 	const uint32_t* quantized_positions = (const uint32_t*) (mesh_data + mesh->positions.offset);
 	float* vertices = (float*) (staging_data + staging.buffers[0].offset);
-	for (uint32_t i = 0; i != mesh->triangle_count * 3; ++i) {
+	for (uint32_t i = 0; i != triangle_count3; ++i) {
 		uint32_t quantized_position[2] = {quantized_positions[2 * i + 0], quantized_positions[2 * i + 1]};
 		float position[3] = {
 			(float) (quantized_position[0] & 0x1FFFFF),
@@ -201,7 +204,7 @@ int create_acceleration_structure(acceleration_structure_t* structure, const dev
 			.triangles = {
 				.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
 				.vertexData = { .deviceAddress = vkGetBufferDeviceAddress(device->device, &vertices_address) },
-				.maxVertex = primitive_count * 3 - 1,
+				.maxVertex = triangle_count3 - 1,
 				.vertexStride = 3 * sizeof(float),
 				.indexType = VK_INDEX_TYPE_NONE_KHR,
 				.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT,
