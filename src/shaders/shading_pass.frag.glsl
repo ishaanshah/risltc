@@ -116,22 +116,26 @@ vec3 get_polygon_radiance(vec3 sampled_dir, vec3 shading_position, polygonal_lig
 	\param diffuse Whether the diffuse BRDF component is evaluated.
 	\param specular Whether the specular BRDF component is evaluated.
 	\return BRDF times incoming radiance times visibility.*/
-vec3 get_polygon_radiance_visibility_brdf_product(out float out_lambert, vec3 sampled_dir, shading_data_t shading_data, polygonal_light_t polygonal_light, bool diffuse, bool specular) {
+vec3 get_polygon_radiance_visibility_brdf_product(out float out_lambert, vec3 sampled_dir, shading_data_t shading_data, polygonal_light_t polygonal_light
+//, bool diffuse, bool specular
+) {
 	out_lambert = dot(shading_data.normal, sampled_dir);
 	bool visibility = (out_lambert > 0.0f);
 	get_polygon_visibility(visibility, sampled_dir, shading_data.position, polygonal_light);
 	if (visibility) {
 		vec3 radiance = get_polygon_radiance(sampled_dir, shading_data.position, polygonal_light);
-		return radiance * evaluate_brdf(shading_data, sampled_dir, diffuse, specular);
+		return radiance * evaluate_brdf(shading_data, sampled_dir);
 	}
 	else
 		return vec3(0.0f);
 }
 
+/*
 //! Overload that evaluates diffuse and specular BRDF components
 vec3 get_polygon_radiance_visibility_brdf_product(out float lambert, vec3 sampled_dir, shading_data_t shading_data, polygonal_light_t polygonal_light) {
 	return get_polygon_radiance_visibility_brdf_product(lambert, sampled_dir, shading_data, polygonal_light, true, true);
 }
+*/
 
 //! Like get_polygon_radiance_visibility_brdf_product() but always evaluates
 //! both BRDF components and also outputs the visibility term explicitly.
@@ -140,7 +144,7 @@ vec3 get_polygon_radiance_visibility_brdf_product(out bool out_visibility, vec3 
 	get_polygon_visibility(out_visibility, sampled_dir, shading_data.position, polygonal_light);
 	if (out_visibility) {
 		vec3 radiance = get_polygon_radiance(sampled_dir, shading_data.position, polygonal_light);
-		return radiance * evaluate_brdf(shading_data, sampled_dir, true, true);
+		return radiance * evaluate_brdf(shading_data, sampled_dir /* , true, true */);
 	}
 	else
 		return vec3(0.0f);
@@ -153,7 +157,7 @@ vec3 get_polygon_radiance_brdf_product(inout bool out_visibility, vec3 sampled_d
 	get_polygon_visibility(out_visibility, sampled_dir, shading_data.position, polygonal_light);
 	out_visibility = side_visibility && out_visibility;
 	vec3 radiance = get_polygon_radiance(sampled_dir, shading_data.position, polygonal_light);
-	return radiance * evaluate_brdf(shading_data, sampled_dir, true, true);
+	return radiance * evaluate_brdf(shading_data, sampled_dir /* , true, true */);
 }
 
 
@@ -205,8 +209,9 @@ vec3 get_mis_estimate(vec3 integrand, vec3 sampled_weight, float sampled_density
 	vec3 mixed_weight_over_density = vec3(fma(-visibility_estimate, balance_weight_over_density, balance_weight_over_density));
 	mixed_weight_over_density = fma(vec3(visibility_estimate), vec3(sampled_weight / weighted_sum), vec3(mixed_weight_over_density));
 	// For visible samples, we use the actual integrand
-	vec3 visible_estimate = mixed_weight_over_density * integrand;
-	return visible_estimate;
+	//vec3 visible_estimate = mixed_weight_over_density * integrand;
+	//return visible_estimate;
+	return mixed_weight_over_density * integrand;
 
 #elif MIS_HEURISTIC_OPTIMAL
 	return visibility_estimate * sampled_weight + balance_weight_over_density * (integrand - visibility_estimate * weighted_sum);
@@ -292,6 +297,9 @@ vec3 evaluate_polygonal_light_shading_peters(
 	float rcp_diffuse_projected_solid_angle = 1.0f / polygon_diffuse.projected_solid_angle;
 	float rcp_specular_projected_solid_angle = 1.0f / polygon_specular.projected_solid_angle;
 	vec3 specular_weight_rgb = vec3(specular_weight);
+	
+	//mat3x4 transponsed = transpose(ltc.world_to_shading_space);
+
 	// For optimal MIS, constant factors in the diffuse and specular weight
 	// matter
 #if MIS_HEURISTIC_OPTIMAL
@@ -318,6 +326,7 @@ vec3 evaluate_polygonal_light_shading_peters(
 			float diffuse_density = dir_shading_space.z * rcp_diffuse_projected_solid_angle;
 			// Evaluate radiance and BRDF and the integrand as a whole
 			bool visibility;
+			//vec3 integrand = dir_shading_space.z * get_polygon_radiance_visibility_brdf_product(visibility, (transponsed * dir_shading_space).xyz, shading_data, polygonal_light);
 			vec3 integrand = dir_shading_space.z * get_polygon_radiance_visibility_brdf_product(visibility, (transpose(ltc.world_to_shading_space) * dir_shading_space).xyz, shading_data, polygonal_light);
 			// Use the appropriate MIS heuristic to turn the sample into a
 			// splat and accummulate
@@ -368,24 +377,22 @@ vec3 evaluate_polygonal_light_shading(
 
 	// Clip
 	uint clipped_vertex_count = clip_polygon(polygonal_light.vertex_count, vertices_shading_space);
-	vec3 diffuse = vec3(0);
 	if (clipped_vertex_count > 0) {
-		diffuse = calculate_ltc(clipped_vertex_count, vertices_shading_space) * shading_data.diffuse_albedo * polygonal_light.surface_radiance;
-		result += diffuse;
+		result += calculate_ltc(clipped_vertex_count, vertices_shading_space) * shading_data.diffuse_albedo * polygonal_light.surface_radiance;
 	}
 
 	// GGX Shading
 	vec3 vertices_cosine_space[MAX_POLYGON_VERTEX_COUNT];
-	mat4x3 ltc_shading_to_cosine_space_ltc_world_to_shading_space = ltc.shading_to_cosine_space * ltc.world_to_shading_space;
+	//mat4x3 ltc_shading_to_cosine_space_ltc_world_to_shading_space = ltc.shading_to_cosine_space * ltc.world_to_shading_space;
 	for (uint i = 0; i != MAX_POLYGONAL_LIGHT_VERTEX_COUNT; ++i)
-		vertices_cosine_space[i] = ltc_shading_to_cosine_space_ltc_world_to_shading_space * vec4(polygonal_light.vertices_world_space[i], 1.0f);
+		//vertices_cosine_space[i] = ltc_shading_to_cosine_space_ltc_world_to_shading_space * vec4(polygonal_light.vertices_world_space[i], 1.0f);
+		vertices_cosine_space[i] = ltc.shading_to_cosine_space * ltc.world_to_shading_space * vec4(polygonal_light.vertices_world_space[i], 1.0f);
 
 	// Clip
 	clipped_vertex_count = clip_polygon(polygonal_light.vertex_count, vertices_cosine_space);
 	vec3 ggx = vec3(0);
 	if (clipped_vertex_count > 0) {
-		ggx = calculate_ltc(clipped_vertex_count, vertices_cosine_space) * ltc.albedo * polygonal_light.surface_radiance;
-		result += ggx;
+		result += calculate_ltc(clipped_vertex_count, vertices_cosine_space) * ltc.albedo * polygonal_light.surface_radiance;
 	}
 
 	// Don't divide by sample count for LTC as result is analytic

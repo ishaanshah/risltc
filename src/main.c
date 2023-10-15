@@ -30,6 +30,16 @@
 
 #define JPEG_QUALITY 70
 
+double startRenderTime;
+double screenshotStartTime;
+float screenshotSaveTime = 0;
+
+char fps_time_str[100];
+char time_str[100];
+
+const char application_display_name[] = "Vulkan renderer";
+const char application_internal_name[] = "vulkan_renderer_moments";
+
 
 /*! GLFW callbacks do not support passing a user-defined pointer. Thus, we have
 	a single static, global pointer to the running application to give them access
@@ -2071,7 +2081,10 @@ int record_render_frame_commands(VkCommandBuffer cmd, application_t* app, uint32
 	vkCmdDraw(cmd, 3, 1, 0, 0);
 	// Run the interface pass
 	vkCmdNextSubpass(cmd, VK_SUBPASS_CONTENTS_INLINE);
-	if (app->render_settings.show_gui && !app->screenshot.path_hdr && !app->screenshot.path_png && !app->screenshot.path_jpg) {
+	if (app->render_settings.show_gui && 
+		//not save screenshot process
+		!app->screenshot.path_hdr && !app->screenshot.path_png && !app->screenshot.path_jpg
+	) {
 		if (render_gui(cmd, app, swapchain_index)) {
 			printf("Failed to render the user interface.\n");
 			return 1;
@@ -2179,6 +2192,9 @@ void destroy_screenshot(screenshot_t* screenshot, const device_t* device) {
 	free(screenshot->ldr_copy);
 	free(screenshot->hdr_copy);
 	memset(screenshot, 0, sizeof(*screenshot));
+
+	screenshotSaveTime = glfwGetTime() - screenshotStartTime;
+	printf("saved in %.1fs\n", screenshotSaveTime);
 }
 
 
@@ -2186,6 +2202,7 @@ void destroy_screenshot(screenshot_t* screenshot, const device_t* device) {
 	Can be called any time, except when taking a screenshot is already in
 	progress. If *.hdr is non-NULL, the others must be NULL.*/
 void take_screenshot(screenshot_t* screenshot, const char* path_png, const char* path_jpg, const char* path_hdr) {
+	screenshotStartTime = glfwGetTime();
 	if (path_hdr && (path_png || path_jpg)) {
 		printf("Cannot mix LDR and HDR screenshots.\n");
 		return;
@@ -2580,8 +2597,7 @@ int update_application(application_t* app, const application_updates_t* update_i
 int startup_application(application_t* app, int experiment_index, bool_override_t v_sync_override, bool_override_t run_all_exp) {
 	memset(app, 0, sizeof(*app));
 	g_glfw_application = app;
-	const char application_display_name[] = "Vulkan renderer";
-	const char application_internal_name[] = "vulkan_renderer";
+
 	// Create the device
 	if (create_vulkan_device(&app->device, application_internal_name, 0, VK_TRUE)) {
 		destroy_application(app);
@@ -2615,6 +2631,9 @@ int startup_application(application_t* app, int experiment_index, bool_override_
 	}
 	app->run_all_exp = run_all_exp;
 	app->accum_num = 0;
+
+	startRenderTime = glfwGetTime();
+
 	app->timings = NULL;
 	// Create the swapchain
 	if (create_or_resize_swapchain(&app->swapchain, &app->device, VK_FALSE, application_display_name, 1920, 1080, app->render_settings.v_sync)) {
@@ -2822,7 +2841,9 @@ void glfw_framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 			glfwSetWindowShouldClose(window, 1);
 			return;
 		}
+
 		app->accum_num = 0;
+		startRenderTime = glfwGetTime();
 	}
 }
 
@@ -2902,7 +2923,10 @@ int handle_frame_input(application_t* app) {
 	control_camera(&app->scene_specification.camera, app->swapchain.window, &reset_accum);
 
 	// Reset accumulation if needed
-	if (reset_accum) app->accum_num = 0;
+	if (reset_accum) {
+		app->accum_num = 0;
+		startRenderTime = glfwGetTime();
+	}
 
 	return 0;
 }
@@ -3041,10 +3065,22 @@ int render_frame(application_t* app) {
 	// Only increment if we are not currently taking a HDR screenshot
 	// If HDR is requested, LDR screenshot was taken in this frame.
 	// If that is the case, we don't want to increment the accum_num
-	if (app->render_settings.accum && app->screenshot.frame_bits < 2) {
+	if (app->render_settings.accum && app->screenshot.frame_bits < 2 &&
+		//not save screenshot process
+		!app->screenshot.path_hdr && !app->screenshot.path_png && !app->screenshot.path_jpg
+	) {
 		if (app->run_all_exp && app->accum_num % 1000 == 0)
 			printf("%d Samples Completed\n", app->accum_num);
 		app->accum_num += 1;
+
+		float elapsedTime  = glfwGetTime() - startRenderTime - screenshotSaveTime;
+		screenshotSaveTime = 0;
+
+		get_time_str(time_str, elapsedTime);
+
+		sprintf(fps_time_str, "%s | %ld pass   %.1f FPS   %s", application_display_name, app->accum_num, (float)app->accum_num / elapsedTime, time_str);
+
+		glfwSetWindowTitle(app->swapchain.window, fps_time_str);
 	}
 
 	return 0;

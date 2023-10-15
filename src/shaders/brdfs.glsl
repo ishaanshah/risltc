@@ -40,8 +40,10 @@ struct shading_data_t {
 
 
 /*! An implementation of the Schlick approximation for the Fresnel term.*/
-vec3 fresnel_schlick(vec3 fresnel_0, vec3 fresnel_90, float cos_theta) {
-	float flipped = 1.0f - cos_theta;
+vec3 fresnel_schlick(vec3 fresnel_0, vec3 fresnel_90, float flipped
+//cos_theta
+) {
+	//float flipped = 1.0f - cos_theta;
 	return fresnel_0 + (fresnel_90 - fresnel_0) * (flipped * flipped * flipped * flipped * flipped);
 }
 
@@ -54,15 +56,16 @@ vec3 fresnel_schlick(vec3 fresnel_0, vec3 fresnel_90, float cos_theta) {
 	proposed for Frostbite:
 	https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
 	https://dl.acm.org/doi/abs/10.1145/2614028.2615431 */
-vec3 evaluate_brdf(shading_data_t data, vec3 incoming_light_direction, bool diffuse, bool specular) {
+vec3 evaluate_brdf(shading_data_t data, vec3 incoming_light_direction /* , bool diffuse, bool specular */) {
 	// A few computations are shared between diffuse and specular evaluation
 	vec3 half_vector = normalize(incoming_light_direction + data.outgoing);
 	float lambert_incoming = dot(data.normal, incoming_light_direction);
-	float outgoing_dot_half = dot(data.outgoing, half_vector);
+	//float outgoing_dot_half = dot(data.outgoing, half_vector);
 	vec3 brdf = vec3(0.0f);
 
 	// Disney diffuse BRDF
-	if (diffuse) {
+	//if (diffuse) 
+	{
 		// CHANGED: to basic lambertian diffuse material
 		// float fresnel_90 = fma(outgoing_dot_half * outgoing_dot_half, 2.0f * data.roughness, 0.5f);
 		// float fresnel_product =
@@ -72,7 +75,8 @@ vec3 evaluate_brdf(shading_data_t data, vec3 incoming_light_direction, bool diff
 		brdf += data.diffuse_albedo;
 	}
 	// Frostbite specular BRDF
-	if (specular) {
+	//if (specular) 
+	{
 		float normal_dot_half = dot(data.normal, half_vector);
 		// Evaluate the GGX normal distribution function
 		float roughness_squared = data.roughness * data.roughness;
@@ -87,7 +91,8 @@ vec3 evaluate_brdf(shading_data_t data, vec3 incoming_light_direction, bool diff
 		//float smith = 0.5f / (masking + shadowing);
 		
 		// Evaluate the Fresnel term and put it all together
-		vec3 fresnel = fresnel_schlick(data.fresnel_0, vec3(1.0f), clamp(outgoing_dot_half, 0.0f, 1.0f));
+		//vec3 fresnel = fresnel_schlick(data.fresnel_0, vec3(1.0f), 1.0f - clamp(outgoing_dot_half, 0.0f, 1.0f));
+		vec3 fresnel = fresnel_schlick(data.fresnel_0, vec3(1.0f), 1.0f - clamp(dot(data.outgoing, half_vector), 0.0f, 1.0f));
 		// CHANGED: Convert to grayscale fresnel
 		// brdf += ggx * smith * fresnel;
 		
@@ -95,14 +100,14 @@ vec3 evaluate_brdf(shading_data_t data, vec3 incoming_light_direction, bool diff
 		
 		//ggx * smith = (0.5f * roughness_squared) / (ggx * ggx * (masking + shadowing)) //2* 2/ + => 3* 1/ +
 		brdf += (dot(fresnel, luminance_weights) * 0.5f * roughness_squared) / (ggx * ggx * (masking + shadowing));
+		//4* 1/ 1+  was 3* 2/ 1+
 	}
 	return brdf * M_INV_PI;
 }
 
-
+/*
 //! Overload that evaluates both diffuse and specular
 vec3 evaluate_brdf(shading_data_t data, vec3 incoming_light_direction) {
 	return evaluate_brdf(data, incoming_light_direction, true, true);
 }
-
-
+*/

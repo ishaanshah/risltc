@@ -32,8 +32,10 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 	ImGui::Begin("Scene and render settings");
 	scene_specification_t* scene = &app->scene_specification;
 	render_settings_t* settings = &app->render_settings;
+
+	/*
 	// Display some help text
-	ImGui::Text("Controls [?]");
+	ImGui::Text("[?]");
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip(
 			"LMB             Rotate camera\n"
@@ -51,14 +53,16 @@ void specify_user_interface(application_updates_t* updates, application_t* app, 
 		);
 	// Display the frame rate
 	ImGui::SameLine();
-	ImGui::Text("Frame time: %.2f ms", frame_time * 1000.0f);
+	ImGui::Text("Frame %d time: %.2f ms", app->accum_num, frame_time * 1000.0f);
 	// Display a text that changes each frame to indicate to the user whether
 	// the renderer is running
+
 	static uint32_t frame_index = 0;
 	++frame_index;
 	ImGui::SameLine();
 	const char* progress_texts[] = {" ......", ". .....", ".. ....", "... ...", ".... ..", "..... .", "...... "};
 	ImGui::Text(progress_texts[frame_index % COUNT_OF(progress_texts)]);
+	*/
 
 	// Scene selection
 	int scene_index = 0;
