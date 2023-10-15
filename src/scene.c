@@ -190,14 +190,15 @@ int create_acceleration_structure(acceleration_structure_t* structure, const dev
 			(float) ((quantized_position[1] & 0x7FFFFC00) >> 10)
 		};
 		
-		i3 += 3;
-		i3j = i3;
 		for (uint32_t j = 0; j != 3; ++j) {
 			vertices[i3j] = position[j] * mesh->dequantization_factor[j] + mesh->dequantization_summand[j];
 			i3j++;
 		}
 		
 		i2 += 2;
+		
+		i3 += 3;
+		i3j = i3;
 	}
 	// Figure out how big the buffers for the bottom-level need to be
 	uint32_t primitive_count = (uint32_t) mesh->triangle_count;
