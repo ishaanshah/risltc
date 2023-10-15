@@ -162,6 +162,9 @@ void control_camera(first_person_camera_t* camera, GLFWwindow* window, uint32_t 
 	{
 		if (shifts + ctrls == 2)
 			mult_speed = 100.0f;
+		else
+		if (alts + ctrls == 2)
+			mult_speed = 0.05f;
 	}
 
 	float step = time_delta * camera->speed * mult_speed;

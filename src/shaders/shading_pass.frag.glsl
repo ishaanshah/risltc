@@ -372,8 +372,9 @@ vec3 evaluate_polygonal_light_shading(
 
 	// GGX Shading
 	vec3 vertices_cosine_space[MAX_POLYGON_VERTEX_COUNT];
+	mat4x3 ltc_shading_to_cosine_space_ltc_world_to_shading_space = ltc.shading_to_cosine_space * ltc.world_to_shading_space;
 	for (uint i = 0; i != MAX_POLYGONAL_LIGHT_VERTEX_COUNT; ++i)
-		vertices_cosine_space[i] = ltc.shading_to_cosine_space * ltc.world_to_shading_space * vec4(polygonal_light.vertices_world_space[i], 1.0f);
+		vertices_cosine_space[i] = ltc_shading_to_cosine_space_ltc_world_to_shading_space * vec4(polygonal_light.vertices_world_space[i], 1.0f);
 
 	// Clip
 	clipped_vertex_count = clip_polygon(polygonal_light.vertex_count, vertices_cosine_space);
