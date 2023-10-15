@@ -42,12 +42,8 @@ void main() {
 		g_out_color = prev_color;
 	} else {
 		vec4 curr_color = subpassLoad(g_shading_buffer);
-		g_out_color.x = fma(prev_color.x, float(g_accum_num), curr_color.x);
-		g_out_color.y = fma(prev_color.y, float(g_accum_num), curr_color.y);
-		g_out_color.z = fma(prev_color.z, float(g_accum_num), curr_color.z);
-		g_out_color.w = fma(prev_color.w, float(g_accum_num), curr_color.w);
-
-		g_out_color /= float(g_accum_num+1);
+		
+		g_out_color = (prev_color * float(g_accum_num) + curr_color) / float(g_accum_num+1);
 	}
 
 }

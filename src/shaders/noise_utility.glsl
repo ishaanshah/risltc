@@ -85,12 +85,18 @@ noise_accessor_t get_noise_accessor(
 }
 
 //! Retrieves the next two noise values and advances the accessor
+/*
 vec2 get_noise_2(inout noise_accessor_t accessor) {
 	return vec2(get_noise_gen(accessor.seed), get_noise_gen(accessor.seed));
 }
+*/
+#define get_noise_2(accessor) vec2(get_noise_gen((accessor).seed), get_noise_gen((accessor).seed))
 
 
 //! Retrieves the next noise value and advances the accessor
+/*
 float get_noise_1(inout noise_accessor_t accessor) {
 	return get_noise_gen(accessor.seed);
 }
+*/
+#define get_noise_1(accessor) (get_noise_gen((accessor).seed))

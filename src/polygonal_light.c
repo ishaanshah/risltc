@@ -63,12 +63,17 @@ void update_polygonal_light(polygonal_light_t* light) {
 	memcpy(light->rotation, rotation, sizeof(rotation));
 	// Transform vertices to world space
 	float scalings[2] = { light->scaling_x, light->scaling_y };
+	uint32_t i4j = 0;
+	uint32_t i4j0 = 0;
 	for (uint32_t i = 0; i != light->vertex_count; ++i) {
 		for (uint32_t j = 0; j != 3; ++j) {
-			light->vertices_world_space[i * 4 + j] = light->translation[j];
+			light->vertices_world_space[i4j] = light->translation[j];
 			for (uint32_t k = 0; k != 2; ++k)
-				light->vertices_world_space[i * 4 + j] += scalings[k] * rotation[j][k] * light->vertices_plane_space[i * 4 + k];
+				light->vertices_world_space[i4j] += scalings[k] * rotation[j][k] * light->vertices_plane_space[i4j0 + k];
+			i4j++;
 		}
+		i4j0 += 4;
+		i4j = i4j0;
 	}
 	// Construct the plane of the polygon
 	light->plane[0] = rotation[0][2];

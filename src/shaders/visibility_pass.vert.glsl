@@ -27,12 +27,12 @@ layout (location = 0) flat out uint g_out_primitive_index;
 void main() {
 	vec3 vertex_position_world_space = decode_position_64_bit(g_quantized_vertex_position, g_mesh_dequantization_factor, g_mesh_dequantization_summand);
 	// The last bit encodes whether the vertex is a part of a light
-	uint is_light = g_quantized_vertex_position.y >> 31;	// 1 if it is a light, else 0
+	//uint is_light = g_quantized_vertex_position.y >> 31;	// 1 if it is a light, else 0
 	gl_Position = g_world_to_projection_space * vec4(vertex_position_world_space, 1.0f);
 	// Without index buffer, the primitive index is the vertex index divided by
 	// three
-	g_out_primitive_index = gl_VertexIndex / 3;
 	
 	// Encode if primitive is a light (this reduces the max number of indices but it's not an issue for us)
-	g_out_primitive_index += is_light << 31;
+	//g_out_primitive_index = ( gl_VertexIndex / 3) + (is_light << 31);
+	g_out_primitive_index = ( gl_VertexIndex / 3) + (g_quantized_vertex_position.y & 2147483648); //2 shift -> 1&
 }

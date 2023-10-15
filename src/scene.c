@@ -179,15 +179,25 @@ int create_acceleration_structure(acceleration_structure_t* structure, const dev
 	// Dequantize the mesh data
 	const uint32_t* quantized_positions = (const uint32_t*) (mesh_data + mesh->positions.offset);
 	float* vertices = (float*) (staging_data + staging.buffers[0].offset);
+	uint32_t i2 = 0;
+	uint32_t i3 = 0;
+	uint32_t i3j = 0;
 	for (uint32_t i = 0; i != triangle_count3; ++i) {
-		uint32_t quantized_position[2] = {quantized_positions[2 * i + 0], quantized_positions[2 * i + 1]};
+		uint32_t quantized_position[2] = {quantized_positions[i2], quantized_positions[i2 + 1]};
 		float position[3] = {
 			(float) (quantized_position[0] & 0x1FFFFF),
 			(float) (((quantized_position[0] & 0xFFE00000) >> 21) | ((quantized_position[1] & 0x3FF) << 11)),
 			(float) ((quantized_position[1] & 0x7FFFFC00) >> 10)
 		};
-		for (uint32_t j = 0; j != 3; ++j)
-			vertices[3 * i + j] = position[j] * mesh->dequantization_factor[j] + mesh->dequantization_summand[j];
+		
+		i3 += 3;
+		i3j = i3;
+		for (uint32_t j = 0; j != 3; ++j) {
+			vertices[i3j] = position[j] * mesh->dequantization_factor[j] + mesh->dequantization_summand[j];
+			i3j++;
+		}
+		
+		i2 += 2;
 	}
 	// Figure out how big the buffers for the bottom-level need to be
 	uint32_t primitive_count = (uint32_t) mesh->triangle_count;
@@ -360,7 +370,8 @@ int create_acceleration_structure(acceleration_structure_t* structure, const dev
 		{ .primitiveCount = 1 },
 	};
 	for (uint32_t i = 0; i != 2; ++i) {
-		const char* level_name = (i == 0) ? "bottom" : "top";
+		//not used
+		//const char* level_name = (i == 0) ? "bottom" : "top";
 		VkAccelerationStructureBuildGeometryInfoKHR build_info = (i == 0) ? bottom_build_info : top_build_info;
 		VkBufferDeviceAddressInfo scratch_adress_info = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
