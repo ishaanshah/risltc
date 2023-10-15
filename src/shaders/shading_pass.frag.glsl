@@ -288,6 +288,7 @@ vec3 evaluate_polygonal_light_shading_peters(
 	vec3 diffuse_albedo = max(shading_data.diffuse_albedo, vec3(0.01f));
 	vec3 diffuse_weight = diffuse_albedo * polygon_diffuse.projected_solid_angle;
 	uint technique_count = (polygon_specular.projected_solid_angle > 0.0f) ? 2 : 1;
+	bool polygon_specular_projected_solid_angleOK = (technique_count == 2);
 	float rcp_diffuse_projected_solid_angle = 1.0f / polygon_diffuse.projected_solid_angle;
 	float rcp_specular_projected_solid_angle = 1.0f / polygon_specular.projected_solid_angle;
 	vec3 specular_weight_rgb = vec3(specular_weight);
@@ -303,7 +304,8 @@ vec3 evaluate_polygonal_light_shading_peters(
 		// Take the samples
 		vec3 dir_shading_space_diffuse = sample_projected_solid_angle_polygon(polygon_diffuse, get_noise_2(accessor));
 		vec3 dir_shading_space_specular;
-		if (polygon_specular.projected_solid_angle > 0.0f) {
+
+		if (polygon_specular_projected_solid_angleOK) {
 			dir_shading_space_specular = sample_projected_solid_angle_polygon(polygon_specular, get_noise_2(accessor));
 			dir_shading_space_specular = normalize(ltc.cosine_to_shading_space * dir_shading_space_specular);
 		}
@@ -314,19 +316,21 @@ vec3 evaluate_polygonal_light_shading_peters(
 			// Compute the densities for the sample with respect to both
 			// sampling techniques (w.r.t. solid angle measure)
 			float diffuse_density = dir_shading_space.z * rcp_diffuse_projected_solid_angle;
-			float specular_density = evaluate_ltc_density(ltc, dir_shading_space, rcp_specular_projected_solid_angle);
 			// Evaluate radiance and BRDF and the integrand as a whole
 			bool visibility;
 			vec3 integrand = dir_shading_space.z * get_polygon_radiance_visibility_brdf_product(visibility, (transpose(ltc.world_to_shading_space) * dir_shading_space).xyz, shading_data, polygonal_light);
 			// Use the appropriate MIS heuristic to turn the sample into a
 			// splat and accummulate
-			if (j == 0 && polygon_specular.projected_solid_angle <= 0.0f)
+			if (j == 0 && !polygon_specular_projected_solid_angleOK)
 				// We only have one sampling technique, so no MIS is needed
 				result += visibility ? (integrand / diffuse_density) : vec3(0.0f);
-			else if (j == 0)
+			else {
+				float specular_density = evaluate_ltc_density(ltc, dir_shading_space, rcp_specular_projected_solid_angle);
+				if (j == 0)
 				result += get_mis_estimate(integrand, diffuse_weight, diffuse_density, specular_weight_rgb, specular_density, g_mis_visibility_estimate);
-			else
+				else
 				result += get_mis_estimate(integrand, specular_weight_rgb, specular_density, diffuse_weight, diffuse_density, g_mis_visibility_estimate);
+			}
 		}
 	)
 
