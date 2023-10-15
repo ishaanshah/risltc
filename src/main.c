@@ -2195,7 +2195,7 @@ void destroy_screenshot(screenshot_t* screenshot, const device_t* device) {
 	free(screenshot->hdr_copy);
 	memset(screenshot, 0, sizeof(*screenshot));
 
-	screenshotSaveTime = (float) (glfwGetTime() - screenshotStartTime);
+	screenshotSaveTime += (float) (glfwGetTime() - screenshotStartTime);
 	printf("saved in %.1fs\n", screenshotSaveTime);
 }
 
@@ -2635,6 +2635,7 @@ int startup_application(application_t* app, int experiment_index, bool_override_
 	app->accum_num = 0;
 
 	startRenderTime = glfwGetTime();
+	screenshotSaveTime = 0.0f;
 
 	app->timings = NULL;
 	// Create the swapchain
@@ -2846,6 +2847,7 @@ void glfw_framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 
 		app->accum_num = 0;
 		startRenderTime = glfwGetTime();
+		screenshotSaveTime = 0.0f;
 	}
 }
 
@@ -3073,10 +3075,10 @@ int render_frame(application_t* app) {
 	) {
 		if (app->run_all_exp && app->accum_num % 1000 == 0)
 			printf("%d Samples Completed\n", app->accum_num);
-		app->accum_num += 1;
+
+		app->accum_num++;
 
 		float elapsedTime  = (float) (glfwGetTime() - startRenderTime) - screenshotSaveTime;
-		screenshotSaveTime = 0;
 
 		get_time_str(time_str, elapsedTime);
 
