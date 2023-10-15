@@ -32,7 +32,7 @@
 
 double startRenderTime;
 double screenshotStartTime;
-float screenshotSaveTime = 0
+float screenshotSaveTime = 0.0f;
 
 int JPEG_QUALITY = defaultJPEG_QUALITY;
 
@@ -2195,7 +2195,7 @@ void destroy_screenshot(screenshot_t* screenshot, const device_t* device) {
 	free(screenshot->hdr_copy);
 	memset(screenshot, 0, sizeof(*screenshot));
 
-	screenshotSaveTime = glfwGetTime() - screenshotStartTime;
+	screenshotSaveTime = (float) (glfwGetTime() - screenshotStartTime);
 	printf("saved in %.1fs\n", screenshotSaveTime);
 }
 
@@ -3075,7 +3075,7 @@ int render_frame(application_t* app) {
 			printf("%d Samples Completed\n", app->accum_num);
 		app->accum_num += 1;
 
-		float elapsedTime  = glfwGetTime() - startRenderTime - screenshotSaveTime;
+		float elapsedTime  = (float) (glfwGetTime() - startRenderTime) - screenshotSaveTime;
 		screenshotSaveTime = 0;
 
 		get_time_str(time_str, elapsedTime);
