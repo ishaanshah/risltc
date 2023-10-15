@@ -63,15 +63,15 @@ layout(origin_upper_left) in vec4 gl_FragCoord;
 //! Color written to the swapchain image
 layout (location = 0) out vec4 g_out_color;
 
-
+#define min_t (1.0e-3f)
 /*! If shadow rays are enabled, this function traces a shadow ray towards the
 	given polygonal light and updates visibility accordingly. If visibility is
 	false already, no ray is traced. The ray direction must be normalized.*/
 void get_polygon_visibility(inout bool visibility, vec3 sampled_dir, vec3 shading_position, polygonal_light_t polygonal_light) {
 	if (visibility) {
-		float max_t = -dot(vec4(shading_position, 1.0f), polygonal_light.plane) / dot(sampled_dir, polygonal_light.plane.xyz);
-		max_t -= 1e-3;	// Add some delta on the other side as the light polygons are also present in the BLAS
-		float min_t = 1.0e-3f;
+		float max_t = -dot(vec4(shading_position, 1.0f), polygonal_light.plane) / dot(sampled_dir, polygonal_light.plane.xyz) - 1e-3;
+		//max_t -= 1e-3;	// Add some delta on the other side as the light polygons are also present in the BLAS
+
 		// Perform a ray query and wait for it to finish. One call to
 		// rayQueryProceedEXT() should be enough because of
 		// gl_RayFlagsTerminateOnFirstHitEXT.
@@ -202,9 +202,8 @@ vec3 get_mis_estimate(vec3 integrand, vec3 sampled_weight, float sampled_density
 	float balance_weight_over_density = 1.0f / (sampled_density + other_density);
 	vec3 weighted_sum = sampled_weight * sampled_density + other_weight * other_density;
 #if MIS_HEURISTIC_OPTIMAL_CLAMPED
-	vec3 weighted_weight_over_density = sampled_weight / weighted_sum;
 	vec3 mixed_weight_over_density = vec3(fma(-visibility_estimate, balance_weight_over_density, balance_weight_over_density));
-	mixed_weight_over_density = fma(vec3(visibility_estimate), weighted_weight_over_density, vec3(mixed_weight_over_density));
+	mixed_weight_over_density = fma(vec3(visibility_estimate), vec3(sampled_weight / weighted_sum), vec3(mixed_weight_over_density));
 	// For visible samples, we use the actual integrand
 	vec3 visible_estimate = mixed_weight_over_density * integrand;
 	return visible_estimate;
@@ -234,10 +233,12 @@ vec3 evaluate_polygonal_light_shading_peters(
 	// If the shading point is on the wrong side of the polygon, we get a
 	// correct winding by flipping the orientation of the shading space
 	float side = dot(vec4(shading_data.position, 1.0f), polygonal_light.plane);
+
+	if(side < 0.0f) {
 	[[unroll]]
 	for (uint i = 0; i != 4; ++i) {
-		ltc.world_to_shading_space[i][1] = (side < 0.0f) ? -ltc.world_to_shading_space[i][1] : ltc.world_to_shading_space[i][1];
-	}
+		ltc.world_to_shading_space[i][1] = -ltc.world_to_shading_space[i][1];
+	}}
 
 	// Instruction cache misses are a concern. Thus, we strive to keep the code
 	// small by preparing the diffuse (i==0) and specular (i==1) sampling
@@ -347,10 +348,12 @@ vec3 evaluate_polygonal_light_shading(
 	// If the shading point is on the wrong side of the polygon, we get a
 	// correct winding by flipping the orientation of the shading space
 	float side = dot(vec4(shading_data.position, 1.0f), polygonal_light.plane);
+
+	if(side < 0.0f) {
 	[[unroll]]
 	for (uint i = 0; i != 4; ++i) {
-		ltc.world_to_shading_space[i][1] = (side < 0.0f) ? -ltc.world_to_shading_space[i][1] : ltc.world_to_shading_space[i][1];
-	}
+		ltc.world_to_shading_space[i][1] = -ltc.world_to_shading_space[i][1];
+	}}
 
 	// Diffuse shading
 	// Transform to shading space
@@ -362,9 +365,10 @@ vec3 evaluate_polygonal_light_shading(
 	// Clip
 	uint clipped_vertex_count = clip_polygon(polygonal_light.vertex_count, vertices_shading_space);
 	vec3 diffuse = vec3(0);
-	if (clipped_vertex_count > 0)
+	if (clipped_vertex_count > 0) {
 		diffuse = calculate_ltc(clipped_vertex_count, vertices_shading_space) * shading_data.diffuse_albedo * polygonal_light.surface_radiance;
-	result += diffuse;
+		result += diffuse;
+	}
 
 	// GGX Shading
 	vec3 vertices_cosine_space[MAX_POLYGON_VERTEX_COUNT];
@@ -374,10 +378,10 @@ vec3 evaluate_polygonal_light_shading(
 	// Clip
 	clipped_vertex_count = clip_polygon(polygonal_light.vertex_count, vertices_cosine_space);
 	vec3 ggx = vec3(0);
-	if (clipped_vertex_count > 0)
+	if (clipped_vertex_count > 0) {
 		ggx = calculate_ltc(clipped_vertex_count, vertices_cosine_space) * ltc.albedo * polygonal_light.surface_radiance;
-
-	result += ggx;
+		result += ggx;
+	}
 
 	// Don't divide by sample count for LTC as result is analytic
 	return result;
@@ -396,14 +400,16 @@ shading_data_t get_shading_data(ivec2 pixel, int primitive_index, vec3 ray_direc
 	// Load position, normal and texture coordinates for each triangle vertex
 	vec3 positions[3], normals[3];
 	vec2 tex_coords[3];
+	int vertex_index = primitive_index + primitive_index + primitive_index;
+	
 	[[unroll]]
 	for (int i = 0; i != 3; ++i) {
-		int vertex_index = primitive_index * 3 + i;
 		uvec2 quantized_position = texelFetch(g_quantized_vertex_positions, vertex_index).rg;
 		positions[i] = decode_position_64_bit(quantized_position, g_mesh_dequantization_factor, g_mesh_dequantization_summand);
 		vec4 normal_and_tex_coords = texelFetch(g_packed_normals_and_tex_coords, vertex_index);
 		normals[i] = decode_normal_32_bit(normal_and_tex_coords.xy);
 		tex_coords[i] = fma(normal_and_tex_coords.zw, vec2(8.0f, -8.0f), vec2(0.0f, 1.0f));
+		vertex_index++;
 	}
 
 	// Construct the view ray for the pixel at hand (the ray direction is not
@@ -538,7 +544,7 @@ void main() {
 		final_color = vec3(1);
 	} else {
 		// Get ready to use linearly transformed cosines
-		float fresnel_luminance = dot(shading_data.fresnel_0, vec3(0.2126f, 0.7152f, 0.0722f));
+		float fresnel_luminance = dot(shading_data.fresnel_0, luminance_weights);
 		ltc_coefficients_t ltc = get_ltc_coefficients(fresnel_luminance, shading_data.roughness, shading_data.position, shading_data.normal, shading_data.outgoing, g_ltc_constants);
 		// Prepare noise for all sampling decisions
 		noise_accessor_t noise_accessor = get_noise_accessor(pixel, g_viewport_size, g_noise_random_numbers);

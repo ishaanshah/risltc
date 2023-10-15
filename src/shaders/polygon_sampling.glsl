@@ -106,8 +106,7 @@ float positive_atan(float tangent) {
 #if USE_FAST_ATAN
 	return fast_positive_atan(tangent);
 #else
-	float offset = (tangent < 0.0f) ? M_PI : 0.0f;
-	return atan(tangent) + offset;
+	return (tangent < 0.0f) ? (atan(tangent) + M_PI) : atan(tangent);
 #endif
 }
 
@@ -183,9 +182,12 @@ vec3 cross_stable(vec3 lhs, vec3 rhs) {
 
 //! \return The given vector, rotated 90 degrees counterclockwise around the
 //! 		origin
+/*
 vec2 rotate_90(vec2 input_vector) {
 	return vec2(-input_vector.y, input_vector.x);
 }
+*/
+#define rotate_90(input_vector) vec2(-(input_vector).y, (input_vector).x)
 
 
 //! \return true iff the given ellipse is marked as inner ellipse, i.e. iff the
@@ -238,17 +240,23 @@ vec2 ellipse_from_edge(vec3 vertex_0, vec3 vertex_1) {
 //! Transforms the given point using the matrix that characterizes the given
 //! ellipse (as produced by ellipse_from_edge()). To be precise, this matrix is
 //! identity + outerProduct(ellipse, ellipse).
+/*
 vec2 ellipse_transform(vec2 ellipse, vec2 point) {
 	return fma(vec2(dot(ellipse, point)), ellipse, point);
 }
+*/
+#define ellipse_transform(ellipse, point) fma(vec2(dot((ellipse), (point))), (ellipse), (point))
 
 
 //! Given an ellipse in the format produced by ellipse_from_edge(), this
 //! function returns the determinant of the matrix characterizing this
 //! ellipse.
+/*
 float get_ellipse_det(vec2 ellipse) {
 	return fma(ellipse.x, ellipse.x, fma(ellipse.y, ellipse.y, 1.0f));
 }
+*/
+#define get_ellipse_det(ellipse) fma((ellipse).x, (ellipse).x, fma((ellipse).y, (ellipse).y, 1.0f))
 
 //! Returns the reciprocal square root of the ellipse determinant produced by
 //! get_ellipse_det().
@@ -321,11 +329,13 @@ float get_area_between_ellipses_in_sector(vec2 inner_ellipse, float inner_rsqrt_
 	\see ellipse_from_edge() */
 float get_ellipse_area_in_sector(vec2 ellipse, vec2 dir_0, vec2 dir_1) {
 	float ellipse_rsqrt_det = get_ellipse_rsqrt_det(ellipse);
+	if(ellipse_rsqrt_det <= 0.0f) return 0.0f;
+	
 	float det_dirs = max(+0.0f, dot(dir_1, rotate_90(dir_0)));
 	float ellipse_dot = ellipse_rsqrt_det * dot(dir_0, ellipse_transform(ellipse, dir_1));
 	float area = 0.5f * ellipse_rsqrt_det * positive_atan(det_dirs / ellipse_dot);
 	// For degenerate ellipses, the result may be NaN but must be 0.0f
-	return (ellipse_rsqrt_det > 0.0f) ? area : 0.0f;
+	return area;
 }
 
 
@@ -545,8 +555,7 @@ vec2 normalize_approx_and_flip(vec2 rhs, vec2 semi_circle) {
 	// rendering), just use this one instead:
 	// scaling = 1.0f / scaling;
 	// Flip the sign as needed
-	scaling = (dot(rhs, semi_circle) >= 0.0f) ? scaling : -scaling;
-	return scaling * rhs;
+	return rhs * ((dot(rhs, semi_circle) >= 0.0f) ? scaling : -scaling);
 }
 
 

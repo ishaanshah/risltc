@@ -42,8 +42,7 @@ struct shading_data_t {
 /*! An implementation of the Schlick approximation for the Fresnel term.*/
 vec3 fresnel_schlick(vec3 fresnel_0, vec3 fresnel_90, float cos_theta) {
 	float flipped = 1.0f - cos_theta;
-	float flipped_squared = flipped * flipped;
-	return fresnel_0 + (fresnel_90 - fresnel_0) * (flipped_squared * flipped * flipped_squared);
+	return fresnel_0 + (fresnel_90 - fresnel_0) * (flipped * flipped * flipped * flipped * flipped);
 }
 
 
@@ -78,16 +77,24 @@ vec3 evaluate_brdf(shading_data_t data, vec3 incoming_light_direction, bool diff
 		// Evaluate the GGX normal distribution function
 		float roughness_squared = data.roughness * data.roughness;
 		float ggx = fma(fma(normal_dot_half, roughness_squared, -normal_dot_half), normal_dot_half, 1.0f);
-		ggx = roughness_squared / (ggx * ggx);
+		
+		//ggx = roughness_squared / (ggx * ggx);
+		
 		// Evaluate the Smith masking-shadowing function
 		float masking = lambert_incoming * sqrt(fma(fma(-data.lambert_outgoing, roughness_squared, data.lambert_outgoing), data.lambert_outgoing, roughness_squared));
 		float shadowing = data.lambert_outgoing * sqrt(fma(fma(-lambert_incoming, roughness_squared, lambert_incoming), lambert_incoming, roughness_squared));
-		float smith = 0.5f / (masking + shadowing);
+		
+		//float smith = 0.5f / (masking + shadowing);
+		
 		// Evaluate the Fresnel term and put it all together
 		vec3 fresnel = fresnel_schlick(data.fresnel_0, vec3(1.0f), clamp(outgoing_dot_half, 0.0f, 1.0f));
 		// CHANGED: Convert to grayscale fresnel
 		// brdf += ggx * smith * fresnel;
-		brdf += ggx * smith * dot(fresnel, vec3(0.21263901f, 0.71516868f, 0.07219232f));
+		
+		//brdf += ggx * smith * dot(fresnel, luminance_weights);
+		
+		//ggx * smith = (0.5f * roughness_squared) / (ggx * ggx * (masking + shadowing)) //2* 2/ + => 3* 1/ +
+		brdf += (dot(fresnel, luminance_weights) * 0.5f * roughness_squared) / (ggx * ggx * (masking + shadowing));
 	}
 	return brdf * M_INV_PI;
 }

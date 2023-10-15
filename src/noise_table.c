@@ -22,7 +22,8 @@
 
 
 void set_noise_constants(uint32_t resolution_mask[2], uint32_t* texture_index_mask, uint32_t random_numbers[4], noise_table_t* noise, VkBool32 animate_noise) {
+	uint32_t nrs4 = noise->random_seed << 2;
 	for (uint32_t i = 0; i != 4; ++i)
-		random_numbers[i] = animate_noise ? wang_random_number(noise->random_seed * 4 + i) : (i * 0x123456);
+		random_numbers[i] = animate_noise ? wang_random_number(nrs4 + i) : (i * 0x123456);
 	++noise->random_seed;
 }

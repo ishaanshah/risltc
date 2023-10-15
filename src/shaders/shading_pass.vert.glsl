@@ -20,6 +20,5 @@
 layout (location = 0) in ivec2 g_projection_space_position;
 
 void main() {
-	vec2 position_float = vec2(g_projection_space_position);
-	gl_Position = vec4(position_float, 0.0f, 1.0f);
+	gl_Position = vec4(vec2(g_projection_space_position), 0.0f, 1.0f);
 }

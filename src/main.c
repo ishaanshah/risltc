@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define JPEG_QUALITY 70
+
 
 /*! GLFW callbacks do not support passing a user-defined pointer. Thus, we have
 	a single static, global pointer to the running application to give them access
@@ -151,14 +153,14 @@ void specify_default_scene(scene_specification_t* scene) {
 	default_light.scaling_x = default_light.scaling_y = 1.0f;
 	default_light.radiant_flux[0] = default_light.radiant_flux[1] = default_light.radiant_flux[2] = 1.0f;
 	set_polygonal_light_vertex_count(&default_light, 4);
-	default_light.vertices_plane_space[0 * 4 + 0] = 0.0f;
-	default_light.vertices_plane_space[0 * 4 + 1] = 0.0f;
-	default_light.vertices_plane_space[1 * 4 + 0] = 1.0f;
-	default_light.vertices_plane_space[1 * 4 + 1] = 0.0f;
-	default_light.vertices_plane_space[2 * 4 + 0] = 1.0f;
-	default_light.vertices_plane_space[2 * 4 + 1] = 1.0f;
-	default_light.vertices_plane_space[3 * 4 + 0] = 0.0f;
-	default_light.vertices_plane_space[3 * 4 + 1] = 1.0f;
+	default_light.vertices_plane_space[0] = 0.0f;
+	default_light.vertices_plane_space[1] = 0.0f;
+	default_light.vertices_plane_space[4] = 1.0f;
+	default_light.vertices_plane_space[5] = 0.0f;
+	default_light.vertices_plane_space[8] = 1.0f;
+	default_light.vertices_plane_space[9] = 1.0f;
+	default_light.vertices_plane_space[12] = 0.0f;
+	default_light.vertices_plane_space[13] = 1.0f;
 	scene->polygonal_lights = malloc(sizeof(default_light));
 	scene->polygonal_lights[0] = default_light;
 	// Try to quick load. Upon success, it will override the defaults above.
@@ -2391,7 +2393,7 @@ int implement_screenshot(screenshot_t* screenshot, const swapchain_t* swapchain,
 		printf("Wrote screenshot to %s.\n", screenshot->path_png);
 	}
 	if (screenshot->path_jpg) {
-		if (!stbi_write_jpg(screenshot->path_jpg, (int) swapchain->extent.width, (int) swapchain->extent.height, 3, screenshot->ldr_copy, 70)) {
+		if (!stbi_write_jpg(screenshot->path_jpg, (int) swapchain->extent.width, (int) swapchain->extent.height, 3, screenshot->ldr_copy, JPEG_QUALITY)) {
 			printf("Failed to store a screenshot to the *.jpg file at %s. Please check path and permissions.\n", screenshot->path_jpg);
 			destroy_screenshot(screenshot, device);
 			return 1;
