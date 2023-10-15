@@ -28,11 +28,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define JPEG_QUALITY 70
+#define defaultJPEG_QUALITY 85
 
 double startRenderTime;
 double screenshotStartTime;
-float screenshotSaveTime = 0;
+float screenshotSaveTime = 0
+
+int JPEG_QUALITY = defaultJPEG_QUALITY;
 
 char fps_time_str[100];
 char time_str[100];
