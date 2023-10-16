@@ -41,9 +41,8 @@ void main() {
 		// image from the previous frame again
 		g_out_color = prev_color;
 	} else {
-		vec4 curr_color = subpassLoad(g_shading_buffer);
-		
-		g_out_color = (prev_color * float(g_accum_num) + curr_color) / float(g_accum_num+1);
+		vec4 curr_color = subpassLoad(g_shading_buffer);		
+		g_out_color = fma(prev_color, vec4(float(g_accum_num)), curr_color) / float(g_accum_num+1);
 	}
 
 }

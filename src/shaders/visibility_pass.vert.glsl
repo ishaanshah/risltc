@@ -19,6 +19,8 @@
 #include "mesh_quantization.glsl"
 #include "shared_constants.glsl"
 
+#define _1_shl_31 2147483648
+
 //! The quantized world space position from the vertex buffer
 layout (location = 0) in uvec2 g_quantized_vertex_position;
 
@@ -34,5 +36,5 @@ void main() {
 	
 	// Encode if primitive is a light (this reduces the max number of indices but it's not an issue for us)
 	//g_out_primitive_index = ( gl_VertexIndex / 3) + (is_light << 31);
-	g_out_primitive_index = ( gl_VertexIndex / 3) + (g_quantized_vertex_position.y & 2147483648); //2 shift -> 1&
+	g_out_primitive_index = ( gl_VertexIndex / 3) + (g_quantized_vertex_position.y & _1_shl_31); //2 shift -> 1&
 }
