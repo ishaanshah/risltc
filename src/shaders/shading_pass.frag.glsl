@@ -70,6 +70,11 @@ layout (location = 0) out vec4 g_out_color;
 void get_polygon_visibility(inout bool visibility, vec3 sampled_dir, vec3 shading_position, polygonal_light_t polygonal_light) {
 	if (visibility) {
 		float max_t = -dot(vec4(shading_position, 1.0f), polygonal_light.plane) / dot(sampled_dir, polygonal_light.plane.xyz) - 1e-3;
+		if(max_t<min_t) {
+			visibility = false;
+			return;
+		}
+		
 		//max_t -= 1e-3;	// Add some delta on the other side as the light polygons are also present in the BLAS
 
 		// Perform a ray query and wait for it to finish. One call to
