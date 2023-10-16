@@ -30,7 +30,7 @@ struct polygonal_light_t {
 	//! texture.
 	vec3 surface_radiance;
 	//! The dot product between this vector and a point in homogeneous
-	//! coordinates is zero, iff the point is on the plane of this light
+	//! coordinates is zero, if the point is on the plane of this light
 	//! source. plane.xyz has unit length.
 	vec4 plane;
 	uint vertex_count;
