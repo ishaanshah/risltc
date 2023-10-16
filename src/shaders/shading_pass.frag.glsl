@@ -101,41 +101,6 @@ vec3 get_polygon_radiance(vec3 sampled_dir, vec3 shading_position, polygonal_lig
 	return radiance;
 }
 
-/*! Determines the radiance received from the given direction due to the given
-	polygonal light and multiplies it by the BRDF for this direction. If
-	necessary, this function traces a shadow ray to determine visibility.
-	\param lambert The dot product of the normal vector and the given
-		direction, in case you have use for it outside this function.
-	\param sampled_dir The normalized direction from the shading point to the
-		light source in world space. It must be chosen such that the ray
-		actually intersects the polygon (possibly behind an occluder or below
-		the horizon).
-	\param shading_data Shading data for the shading point.
-	\param polygonal_light The light source for which the incoming radiance is
-		evaluated.
-	\param diffuse Whether the diffuse BRDF component is evaluated.
-	\param specular Whether the specular BRDF component is evaluated.
-	\return BRDF times incoming radiance times visibility.*/
-vec3 get_polygon_radiance_visibility_brdf_product(out float out_lambert, vec3 sampled_dir, shading_data_t shading_data, polygonal_light_t polygonal_light
-//, bool diffuse, bool specular
-) {
-	out_lambert = dot(shading_data.normal, sampled_dir);
-	bool visibility = (out_lambert > 0.0f);
-	get_polygon_visibility(visibility, sampled_dir, shading_data.position, polygonal_light);
-	if (visibility) {
-		vec3 radiance = get_polygon_radiance(sampled_dir, shading_data.position, polygonal_light);
-		return radiance * evaluate_brdf(shading_data, sampled_dir);
-	}
-	else
-		return vec3(0.0f);
-}
-
-/*
-//! Overload that evaluates diffuse and specular BRDF components
-vec3 get_polygon_radiance_visibility_brdf_product(out float lambert, vec3 sampled_dir, shading_data_t shading_data, polygonal_light_t polygonal_light) {
-	return get_polygon_radiance_visibility_brdf_product(lambert, sampled_dir, shading_data, polygonal_light, true, true);
-}
-*/
 
 //! Like get_polygon_radiance_visibility_brdf_product() but always evaluates
 //! both BRDF components and also outputs the visibility term explicitly.
@@ -148,16 +113,6 @@ vec3 get_polygon_radiance_visibility_brdf_product(out bool out_visibility, vec3 
 	}
 	else
 		return vec3(0.0f);
-}
-
-//! Like get_polygon_radiance_visibility_brdf_product() but doesn't multiply by visibility
-vec3 get_polygon_radiance_brdf_product(inout bool out_visibility, vec3 sampled_dir, shading_data_t shading_data, polygonal_light_t polygonal_light) {
-	bool side_visibility = (dot(shading_data.normal, sampled_dir) > 0.0f);
-	if (!side_visibility) return vec3(0);
-	get_polygon_visibility(out_visibility, sampled_dir, shading_data.position, polygonal_light);
-	out_visibility = side_visibility && out_visibility;
-	vec3 radiance = get_polygon_radiance(sampled_dir, shading_data.position, polygonal_light);
-	return radiance * evaluate_brdf(shading_data, sampled_dir /* , true, true */);
 }
 
 
