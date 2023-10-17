@@ -1,3 +1,12 @@
+This fork contain essence of paper "Combining Resampled Importance and projected Solid Angle Samplings for Many Area Light Rendering" without compare with previous methods. 
+Also:
+* added FPS counter
+* added total time counter of rendering
+* optimized shaders and c code
+* buffered files load and save
+* added IJKL keyboard shortcuts for camera rotate
+* removed unused code
+
 This renderer is based upon the [vulkan_renderer](https://github.com/MomentsInGraphics/vulkan_renderer)
 written by [Christoph Peters](https://momentsingraphics.de).
 It contains the implementation for the paper "Combining Resampled
