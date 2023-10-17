@@ -7,6 +7,7 @@ Also:
 * added IJKL keyboard shortcuts for camera rotate
 * removed unused code
 
+## 
 This renderer is based upon the [vulkan_renderer](https://github.com/MomentsInGraphics/vulkan_renderer)
 written by [Christoph Peters](https://momentsingraphics.de).
 It contains the implementation for the paper "Combining Resampled
