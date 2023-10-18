@@ -20,14 +20,19 @@
 #extension GL_EXT_samplerless_texture_functions : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_control_flow_attributes : enable
+
+#if RTX_ON
 #extension GL_EXT_ray_query : enable
+#endif
+
+#include "shared_constants.glsl"
+
 #include "noise_utility.glsl"
 #include "brdfs.glsl"
 #include "mesh_quantization.glsl"
 
 #include "polygon_sampling.glsl"
 #include "polygon_clipping.glsl"
-#include "shared_constants.glsl"
 #include "srgb_utility.glsl"
 #include "unrolling.glsl"
 #include "reservoir.glsl"
@@ -54,9 +59,13 @@ layout (binding = 5) uniform sampler2D g_material_textures[3 * MATERIAL_COUNT];
 //! probes or IES profiles
 layout (binding = 7) uniform sampler2D g_light_textures[LIGHT_TEXTURE_COUNT];
 
+#if RTX_ON
 //! The top-level acceleration structure that contains all shadow-casting
 //! geometry
 layout(binding = 9, set = 0) uniform accelerationStructureEXT g_top_level_acceleration_structure;
+#else
+//! Software raytracing data
+#endif
 
 //! The pixel index with origin in the upper left corner
 layout(origin_upper_left) in vec4 gl_FragCoord;
@@ -77,6 +86,7 @@ void get_polygon_visibility(inout bool visibility, vec3 sampled_dir, vec3 shadin
 		
 		//max_t -= 1e-3;	// Add some delta on the other side as the light polygons are also present in the BLAS
 
+#if RTX_ON
 		// Perform a ray query and wait for it to finish. One call to
 		// rayQueryProceedEXT() should be enough because of
 		// gl_RayFlagsTerminateOnFirstHitEXT.
@@ -87,6 +97,9 @@ void get_polygon_visibility(inout bool visibility, vec3 sampled_dir, vec3 shadin
 		rayQueryProceedEXT(ray_query);
 		// Update the visibility
 		visibility = rayQueryGetIntersectionTypeEXT(ray_query, true) == gl_RayQueryCommittedIntersectionNoneEXT;
+#else
+		// software raytracing
+#endif
 	}
 }
 

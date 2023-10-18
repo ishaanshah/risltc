@@ -268,6 +268,8 @@ typedef struct geometry_pass_s {
 //! The sub pass that renders a screen filling triangle to perform deferred
 //! shading in a fragment shader, possibly with ray queries for shadows
 typedef struct shading_pass_s {
+	//! 1 if the shading pass uses ray queries for shadows
+	VkBool32 rtxON;
 	//! Pipeline state and bindings for the shading pass
 	pipeline_with_bindings_t pipeline;
 	//! The vertex and fragment shader that implements the shading pass
