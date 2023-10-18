@@ -27,7 +27,6 @@ target_sources(vulkan_renderer PRIVATE
 	vulkan_basics.c
 	vulkan_basics.h
 	shaders/brdfs.glsl
-	shaders/cubic_solver.glsl
 	shaders/imgui.frag.glsl
 	shaders/imgui.vert.glsl
 	shaders/ltc_utility.glsl
@@ -35,7 +34,6 @@ target_sources(vulkan_renderer PRIVATE
 	shaders/mesh_quantization.glsl
 	shaders/noise_utility.glsl
 	shaders/polygon_sampling.glsl
-	shaders/polygon_sampling_related_work.glsl
 	shaders/polygon_clipping.glsl
 	shaders/polygonal_light_utility.glsl
 	shaders/shading_pass.frag.glsl
